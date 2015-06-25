@@ -1,0 +1,159 @@
+#include "CDXAudioStream.h"
+#include "CMMNotificationClient.h"
+
+#define EVENT_INIT(x) x = CreateEventW(NULL, FALSE, FALSE, NULL); if (x == NULL) { return HRESULT_FROM_WIN32(GetLastError()); }
+#define EVENT_CLEANUP(x) if (x != NULL) { CloseHandle(x); x = NULL; }
+#define CHECK_HR() if (FAILED(hr)) return hr
+
+CDXAudioStream::CDXAudioStream() :
+m_RefCount(1),
+m_StartEvent(NULL),
+m_StopEvent(NULL),
+m_DeviceChangeEvent(NULL),
+m_PropertyChangeEvent(NULL),
+m_WaitEvent(NULL),
+m_HaltEvent(NULL),
+m_Thread(NULL)
+{ }
+
+CDXAudioStream::~CDXAudioStream() {
+	//Expects thread to be halted by child class
+
+	if (m_Thread != NULL) {
+		CloseHandle(m_Thread);
+		m_Thread = NULL;
+	}
+
+	EVENT_CLEANUP(m_StartEvent);
+	EVENT_CLEANUP(m_StopEvent);
+	EVENT_CLEANUP(m_DeviceChangeEvent);
+	EVENT_CLEANUP(m_PropertyChangeEvent);
+	EVENT_CLEANUP(m_WaitEvent);
+	EVENT_CLEANUP(m_HaltEvent);
+}
+
+HRESULT CDXAudioStream::Initialize() {
+	EVENT_INIT(m_StartEvent);
+	EVENT_INIT(m_StopEvent);
+	EVENT_INIT(m_DeviceChangeEvent);
+	EVENT_INIT(m_PropertyChangeEvent);
+	EVENT_INIT(m_WaitEvent);
+	EVENT_INIT(m_HaltEvent);
+
+	m_Thread = CreateThread (
+		NULL,
+		0,
+		StaticStreamThreadEntry,
+		this,
+		NULL,
+		NULL
+	);
+
+	if (m_Thread == NULL) {
+		return HRESULT_FROM_WIN32(GetLastError());
+	}
+
+	return S_OK;
+}
+
+DWORD __stdcall CDXAudioStream::StaticStreamThreadEntry(LPVOID Data) {
+	CDXAudioStream* l_Stream = reinterpret_cast<CDXAudioStream*>(Data);
+
+	return l_Stream->StreamThreadEntry();
+}
+
+DWORD CDXAudioStream::StreamThreadEntry() {
+	bool run = true;
+	DWORD dwResult = 0;
+	HRESULT hr = S_OK;
+	HANDLE Events[] = {
+		m_StartEvent,
+		m_StopEvent,
+		m_DeviceChangeEvent,
+		m_PropertyChangeEvent,
+		m_WaitEvent,
+		m_HaltEvent
+	};
+
+	bool StreamRunning = false;
+
+	static const DWORD SM_START = WAIT_OBJECT_0;
+	static const DWORD SM_STOP = WAIT_OBJECT_0 + 1;
+	static const DWORD SM_DEVICECHANGE = WAIT_OBJECT_0 + 2;
+	static const DWORD SM_PROPERTYCHANGE = WAIT_OBJECT_0 + 3;
+	static const DWORD SM_PROCESS = WAIT_OBJECT_0 + 4;
+	static const DWORD SM_CLOSE = WAIT_OBJECT_0 + 5;
+
+	static const UINT nEvents = sizeof(Events) / sizeof(HANDLE);
+
+	hr = CoInitializeEx (
+		NULL,
+		COINIT_SPEED_OVER_MEMORY |
+		COINIT_APARTMENTTHREADED
+	); CHECK_HR();
+
+	hr = CoCreateInstance (
+		__uuidof(MMDeviceEnumerator),
+		NULL,
+		CLSCTX_ALL,
+		__uuidof(IMMDeviceEnumerator),
+		(void**)(&m_Enumerator)
+	); CHECK_HR();
+
+	CMMNotificationClient NotificationClient(*static_cast<CMMNotificationClientListener*>(this));
+
+	hr = m_Enumerator->RegisterEndpointNotificationCallback (
+		&NotificationClient
+	); CHECK_HR();
+
+	ImplInitialize();
+
+	hr = S_OK;
+
+	while (run) {
+		dwResult = WaitForMultipleObjectsEx (
+			nEvents,
+			Events,
+			FALSE,
+			INFINITE,
+			FALSE
+		);
+
+		switch (dwResult) {
+			case SM_PROCESS: {
+				ImplProcess();
+			} break;
+
+			case SM_START: {
+				ImplStart();
+			} break;
+
+			case SM_STOP: {
+				ImplStop();
+			} break;
+
+			case SM_DEVICECHANGE: {
+				ImplDeviceChange();
+			} break;
+
+			case SM_PROPERTYCHANGE: {
+				ImplPropertyChange();
+			} break;
+
+			case SM_CLOSE: {
+				run = false;
+			} break;
+
+			default: {
+				run = false;
+				hr = E_FAIL;
+			} break;
+		}
+	}
+
+	m_Enumerator->UnregisterEndpointNotificationCallback (
+		&NotificationClient
+	);
+
+	return hr;
+}

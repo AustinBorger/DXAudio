@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="DXAudio.h" />
+    <ClInclude Include="CMMNotificationClient.h" />
+    <ClInclude Include="CDXAudioOutputStream.h" />
+    <ClInclude Include="CDXAudioInputStream.h" />
+    <ClInclude Include="CDXAudioLoopbackStream.h" />
+    <ClInclude Include="CDXAudioDuplexStream.h" />
+    <ClInclude Include="CDXAudioEchoStream.h" />
+    <ClInclude Include="QueryInterface.h" />
+    <ClInclude Include="CMMNotificationClientListener.h" />
+    <ClInclude Include="CDXAudioStream.h" />
+    <ClInclude Include="ClientWriter.h" />
+    <ClInclude Include="ClientReader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DXAudio.cpp" />
+    <ClCompile Include="CMMNotificationClient.cpp" />
+    <ClCompile Include="CDXAudioOutputStream.cpp" />
+    <ClCompile Include="CDXAudioStream.cpp" />
+    <ClCompile Include="ClientWriter.cpp" />
+    <ClCompile Include="ClientReader.cpp" />
+    <ClCompile Include="CDXAudioDuplexStream.cpp" />
+    <ClCompile Include="CDXAudioEchoStream.cpp" />
+    <ClCompile Include="CDXAudioInputStream.cpp" />
+    <ClCompile Include="CDXAudioLoopbackStream.cpp" />
+  </ItemGroup>
+</Project>
