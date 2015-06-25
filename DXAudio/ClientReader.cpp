@@ -140,11 +140,6 @@ HRESULT ClientReader::Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead) {
 		NULL
 	); CHECK_HR();
 
-	//Temp
-	if (FramesToRead != m_PeriodFrames) {
-		return E_ATL_BAD_HKEY;
-	}
-
 	if (m_WaveFormat->SubFormat == KSDATAFORMAT_SUBTYPE_PCM) {
 		if (m_WaveFormat->Samples.wValidBitsPerSample == 16) {
 			for (UINT i = 0; i < FramesToRead; i++) {

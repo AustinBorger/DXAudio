@@ -159,11 +159,6 @@ HRESULT ClientWriter::Write(FLOAT* Buffer, UINT BufferLength) {
 		return E_FAIL;
 	}
 
-	//Temp
-	if (Data.output_frames_gen == 0 && BufferLength != 0) {
-		return E_ACCESSDENIED;
-	}
-
 	hr = m_RenderClient->GetBuffer (
 		Data.output_frames_gen,
 		&ByteBuffer
