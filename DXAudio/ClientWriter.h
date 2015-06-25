@@ -28,42 +28,57 @@
 #include <Audioclient.h>
 #include "samplerate.h"
 
+/* ClientWriter is used to write stream data to an endpoint.  This can only be
+** used with output endpoints. */
 class ClientWriter {
 public:
 	ClientWriter();
 
 	~ClientWriter();
 
+	/* This initializes the writer by creating the necessary interfaces and data. [SampleRate] is the desired
+	** sample rate to be used by the stream callback.  The endpoint data will automatically be resampled
+	** from this format.  [WaitEvent] is the event handle for the event callback mechanism - if NULL,
+	** there will be no event callback on this end. */
 	HRESULT Initialize(FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMMDevice> OutputDevice);
 
+	/* This releases all interfaces and dynamically allocated data and sets the object to a pre-initialized state. */
 	void Clean();
 
+	/* This starts the stream. */
 	HRESULT Start();
 
+	/* This stops the stream. */
 	HRESULT Stop();
 
+	/* This should be called to write the output data to the stream.  [BufferLength] is the size of the buffer,
+	** which is the number of frames to be provided. */
 	HRESULT Write(FLOAT* Buffer, UINT BufferLength);
 
+	/* This determines if the client is still in a valid, usable state. */
 	HRESULT VerifyClient();
 
+	/* Returns the periodicity of the stream in 100-nanosecond units. */
 	REFERENCE_TIME GetPeriod() {
 		return m_Period;
 	}
 
+	/* Returns the number of frames in a period at the sample rate of the endpoint. */
 	UINT32 GetPeriodFrames() {
 		return m_PeriodFrames;
 	}
 
+	/* Returns the resample ratio, which is equal to (endpoint sample rate) / (application sample rate) */
 	DOUBLE GetRatio() {
 		return m_ResampleRatio;
 	}
 
 private:
-	CComPtr<IAudioClient> m_Client;
-	CComPtr<IAudioRenderClient> m_RenderClient;
-	WAVEFORMATEXTENSIBLE* m_WaveFormat;
-	DOUBLE m_ResampleRatio;
-	SRC_STATE* m_ResampleState;
-	UINT32 m_PeriodFrames;
-	REFERENCE_TIME m_Period;
+	CComPtr<IAudioClient> m_Client; //Audio client interface (WASAPI)
+	CComPtr<IAudioRenderClient> m_RenderClient; //Render client interface (WASAPI)
+	WAVEFORMATEXTENSIBLE* m_WaveFormat; //The wave format of the endpoint
+	DOUBLE m_ResampleRatio; //The resample ratio for the stream
+	SRC_STATE* m_ResampleState; //The resample state (libsamplerate object)
+	UINT32 m_PeriodFrames; //Number of frames in a period
+	REFERENCE_TIME m_Period; //Periodicity of the endpoint
 };
