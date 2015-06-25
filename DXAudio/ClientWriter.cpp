@@ -228,9 +228,7 @@ HRESULT ClientWriter::Write(FLOAT* Buffer, UINT BufferLength) {
 	hr = m_RenderClient->ReleaseBuffer (
 		Data.output_frames_gen,
 		NULL
-	);
-
-	CHECK_HR();
+	); CHECK_HR();
 
 	return S_OK;
 }

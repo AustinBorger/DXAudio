@@ -138,11 +138,7 @@ HRESULT ClientReader::Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead) {
 		&Flags,
 		NULL,
 		NULL
-	);
-
-	if (FAILED(hr)) {
-		return hr;
-	}
+	); CHECK_HR();
 
 	//Temp
 	if (FramesToRead != m_PeriodFrames) {
@@ -191,13 +187,9 @@ HRESULT ClientReader::Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead) {
 
 	hr = m_CaptureClient->ReleaseBuffer (
 		FramesToRead
-	);
+	); CHECK_HR();
 
 	ByteBuffer = nullptr;
-
-	if (FAILED(hr)) {
-		return hr;
-	}
 
 	Data.data_in = LocalBuffer;
 	Data.data_out = Buffer;
