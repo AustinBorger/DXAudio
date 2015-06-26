@@ -212,7 +212,6 @@ HRESULT CDXAudioOutputStream::HandleHR(HRESULT hr) {
 		//Obviously nothing went wrong
 	} else if (hr == AUDCLNT_E_DEVICE_INVALIDATED) {
 		//Don't halt, just wait for a call to ImplPropertyChange
-		ImplPropertyChange();
 		return E_FAIL;
 	} else {
 		//Something bad happened, stop the stream and alert the application
