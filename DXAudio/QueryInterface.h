@@ -22,7 +22,6 @@
 
 #pragma once
 
-/* Handles the act of casting to a given interface type. */
 #define QUERY_INTERFACE_CAST(x)\
 	if (riid == __uuidof(x)) {\
 		x* pObj = static_cast<x*>(this);\
@@ -31,5 +30,4 @@
 		return S_OK;\
 	}
 
-/* This should be called at the end of QueryInterface(). */
 #define QUERY_INTERFACE_FAIL() *ppvObject = nullptr; return E_NOINTERFACE;
