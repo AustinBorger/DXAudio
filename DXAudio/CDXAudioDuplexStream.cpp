@@ -25,12 +25,14 @@
 
 #define HANDLE_HR() if (FAILED(HandleHR(hr))) return
 
+//Zero out all data
 CDXAudioDuplexStream::CDXAudioDuplexStream() :
 m_InputDeviceID(nullptr),
 m_OutputDeviceID(nullptr),
 m_Running(false)
 { }
 
+//Close the thread before releasing data/COM objects
 CDXAudioDuplexStream::~CDXAudioDuplexStream() {
 	Halt();
 	WaitForThread();
@@ -49,6 +51,7 @@ CDXAudioDuplexStream::~CDXAudioDuplexStream() {
 HRESULT CDXAudioDuplexStream::Initialize(FLOAT SampleRate, IDXAudioCallback* pDXAudioCallback) {
 	HRESULT hr = S_OK;
 
+	//The callback must implement IDXAudioReadWriteCallback
 	hr = pDXAudioCallback->QueryInterface (
 		IID_PPV_ARGS(&m_ReadWriteCallback)
 	);
@@ -57,6 +60,7 @@ HRESULT CDXAudioDuplexStream::Initialize(FLOAT SampleRate, IDXAudioCallback* pDX
 
 	m_SampleRate = SampleRate;
 
+	//Create the thread (done in CDXAudioStream)
 	hr = CDXAudioStream::Initialize();
 
 	if (FAILED(hr)) return E_FAIL;
@@ -67,31 +71,38 @@ HRESULT CDXAudioDuplexStream::Initialize(FLOAT SampleRate, IDXAudioCallback* pDX
 void CDXAudioDuplexStream::ImplInitialize() {
 	HRESULT hr = S_OK;
 
+	//Get the default audio input device
 	hr = m_Enumerator->GetDefaultAudioEndpoint (
 		eCapture,
 		eConsole,
 		&m_InputDevice
 	); HANDLE_HR();
 
+	//Get the id of this device
 	hr = m_InputDevice->GetId (
 		&m_InputDeviceID
 	); HANDLE_HR();
 
+	//Initialize the client reader
 	InitClientReader();
 
+	//Get the default audio output device
 	hr = m_Enumerator->GetDefaultAudioEndpoint (
 		eRender,
 		eConsole,
 		&m_OutputDevice
 	); HANDLE_HR();
 
+	//Get the id of this device
 	hr = m_OutputDevice->GetId (
 		&m_OutputDeviceID
 	); HANDLE_HR();
 
+	//Initialize the client writer
 	InitClientWriter();
 }
 
+//Start the stream(s)
 void CDXAudioDuplexStream::ImplStart() {
 	m_Running = true;
 	HRESULT hr = m_ClientReader.Start();
@@ -100,6 +111,7 @@ void CDXAudioDuplexStream::ImplStart() {
 	HANDLE_HR();
 }
 
+//Stop the stream(s)
 void CDXAudioDuplexStream::ImplStop() {
 	m_Running = false;
 	HRESULT hr = m_ClientReader.Stop();
@@ -113,66 +125,83 @@ void CDXAudioDuplexStream::ImplDeviceChange() {
 	CComPtr<IMMDevice> DefaultDevice;
 	LPWSTR DefaultDeviceID = nullptr;
 
+	//Get the default audio output device
 	hr = m_Enumerator->GetDefaultAudioEndpoint (
 		eRender,
 		eConsole,
 		&DefaultDevice
 	); HANDLE_HR();
 
+	//Get the id of this device
 	hr = DefaultDevice->GetId (
 		&DefaultDeviceID
 	); HANDLE_HR();
 
+	//Check to see if the id of the default device is the same as ours
 	if (wcscmp(DefaultDeviceID, m_OutputDeviceID) != 0) {
+		//If it isn't, we don't have the default device. Release everything involving the output stream.
 		m_ClientWriter.Clean();
 		m_OutputDevice.Release();
 		CoTaskMemFree(m_OutputDeviceID);
 
+		//Set our device and id to the new default one
 		m_OutputDevice = DefaultDevice;
 		m_OutputDeviceID = DefaultDeviceID;
 
+		//Re-initialize the client writer
 		InitClientWriter();
 
+		//If the stream was running before, we need to start it up again
 		if (m_Running) {
 			hr = m_ClientWriter.Start();
 			HANDLE_HR();
 		}
 	}
 
+	//If the default device was on some other role or data flow, release the data we just created
 	if (DefaultDeviceID != m_OutputDeviceID) {
 		CoTaskMemFree(DefaultDeviceID);
 	}
 
 	DefaultDeviceID = nullptr;
 
+	//Release this com ptr since we're reusing it for checking the input device
 	DefaultDevice.Release();
 
+	//Get the default audio input device
 	hr = m_Enumerator->GetDefaultAudioEndpoint (
 		eCapture,
 		eConsole,
 		&DefaultDevice
 	); HANDLE_HR();
 
+	//Get the id of this device
 	hr = DefaultDevice->GetId (
 		&DefaultDeviceID
 	); HANDLE_HR();
 
+	//Check to see if the id of the default device is the same as ours
 	if (wcscmp(DefaultDeviceID, m_InputDeviceID) != 0) {
+		//If it isn't, we don't have the default device. Release everything involving the input stream.
 		m_ClientReader.Clean();
 		m_InputDevice.Release();
 		CoTaskMemFree(m_InputDeviceID);
 
+		//Set our device and id to the new default one
 		m_InputDevice = DefaultDevice;
 		m_InputDeviceID = DefaultDeviceID;
 
+		//Re-initialize the client reader
 		InitClientReader();
 
+		//If the stream was running before, we need to start it up again
 		if (m_Running) {
 			hr = m_ClientReader.Start();
 			HANDLE_HR();
 		}
 	}
 
+	//If the default device was on some other role or data flow, release the data we just created
 	if (DefaultDeviceID != m_InputDeviceID) {
 		CoTaskMemFree(DefaultDeviceID);
 		DefaultDeviceID = nullptr;
@@ -180,24 +209,30 @@ void CDXAudioDuplexStream::ImplDeviceChange() {
 }
 
 void CDXAudioDuplexStream::ImplPropertyChange() {
+	//This will return AUDCLNT_E_DEVICE_INVALIDATED if we have a stream with outdated properties
 	HRESULT hr = m_ClientWriter.VerifyClient();
 
+	//If that's the case, we need to get rid of this one and create a new one
 	if (hr == AUDCLNT_E_DEVICE_INVALIDATED) {
 		m_ClientWriter.Clean();
 		InitClientWriter();
 
+		//If the stream was running before, we need to start it up again
 		if (m_Running) {
 			hr = m_ClientWriter.Start();
 			HANDLE_HR();
 		}
 	} else HANDLE_HR();
 
+	//This will probably fail too, but it doesn't hurt to check
 	hr = m_ClientReader.VerifyClient();
 
+	//If it does fail, do the same as above
 	if (hr == AUDCLNT_E_DEVICE_INVALIDATED) {
 		m_ClientReader.Clean();
 		InitClientReader();
 
+		//If the stream was running before, we need to start it up again
 		if (m_Running) {
 			hr = m_ClientReader.Start();
 			HANDLE_HR();
@@ -207,25 +242,40 @@ void CDXAudioDuplexStream::ImplPropertyChange() {
 
 void CDXAudioDuplexStream::ImplProcess() {
 	HRESULT hr = S_OK;
+
+	//The number of samples we need to generate corresponds with the application sample rate.
+	//m_ClientReader.GetPeriodFrames() returns the frames needed at the endpoint sample rate,
+	//so we need to multiply by the resample ratio to get the correct number of frames.
 	UINT InputBufferSize = (UINT)(ceil((DOUBLE)(m_ClientReader.GetPeriodFrames()) * m_ClientReader.GetRatio()));
-	FLOAT* InputBuffer = (FLOAT*)(_alloca(sizeof(FLOAT) * 2 * InputBufferSize));
+	FLOAT* InputBuffer = (FLOAT*)(_alloca(sizeof(FLOAT) * 2 * InputBufferSize)); //Create the buffer on the stack (_alloca is safe here)
 	UINT FramesRead = 0;
 
-	hr = m_ClientReader.Read(InputBuffer, InputBufferSize, FramesRead);
+	//Read the resampled data from the device
+	hr = m_ClientReader.Read (
+		InputBuffer,
+		InputBufferSize,
+		FramesRead
+	); HANDLE_HR();
 
-	if (FAILED(hr)) {
-		HANDLE_HR();
-	}
-
+	//Generate an output buffer of equal size to the input buffer, also on the stack
 	FLOAT* OutputBuffer = (FLOAT*)(_alloca(sizeof(FLOAT) * 2 * FramesRead));
 
-	m_ReadWriteCallback->Process(m_SampleRate, InputBuffer, OutputBuffer, FramesRead);
+	//Give the application the input data and tell it to generate output
+	m_ReadWriteCallback->Process (
+		m_SampleRate,
+		InputBuffer,
+		OutputBuffer,
+		FramesRead
+	);
 
-	hr = m_ClientWriter.Write(OutputBuffer, FramesRead);
-
-	HANDLE_HR();
+	//Write this data to the stream
+	hr = m_ClientWriter.Write (
+		OutputBuffer,
+		FramesRead
+	); HANDLE_HR();
 }
 
+//Initialize the client reader
 void CDXAudioDuplexStream::InitClientReader() {
 	HRESULT hr = m_ClientReader.Initialize (
 		false,
@@ -235,6 +285,7 @@ void CDXAudioDuplexStream::InitClientReader() {
 	); HANDLE_HR();
 }
 
+//Initialize the client writer
 void CDXAudioDuplexStream::InitClientWriter() {
 	HRESULT hr = m_ClientWriter.Initialize (
 		m_SampleRate,
@@ -243,6 +294,7 @@ void CDXAudioDuplexStream::InitClientWriter() {
 	); HANDLE_HR();
 }
 
+//Handle bad or good HRESULTS
 HRESULT CDXAudioDuplexStream::HandleHR(HRESULT hr) {
 	if (hr == S_OK) {
 		//Obviously nothing went wrong
@@ -250,6 +302,7 @@ HRESULT CDXAudioDuplexStream::HandleHR(HRESULT hr) {
 		//Don't halt, just wait for a call to ImplPropertyChange
 		return E_FAIL;
 	} else {
+		//Something bad happened, stop the stream and alert the application
 		m_ReadWriteCallback->OnObjectFailure(hr);
 		Halt();
 		return E_FAIL;
