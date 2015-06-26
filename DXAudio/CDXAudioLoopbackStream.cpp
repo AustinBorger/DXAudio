@@ -192,7 +192,7 @@ void CDXAudioLoopbackStream::ImplProcess() {
 	//m_ClientReader.GetPeriodFrames() returns the frames needed at the endpoint sample rate,
 	//so we need to multiply by the resample ratio to get the correct number of frames.
 	UINT InputBufferSize = (UINT)(ceil((DOUBLE)(m_ClientReader.GetPeriodFrames()) * m_ClientReader.GetRatio()));
-	FLOAT* InputBuffer = (FLOAT*)(_alloca(sizeof(FLOAT) * 2 * InputBufferSize));
+	FLOAT* InputBuffer = (FLOAT*)(_alloca(sizeof(FLOAT) * 2 * InputBufferSize)); //Create the buffer on the stack (_alloca is safe here)
 	UINT FramesRead = 0;
 
 	//Read the resampled data from the device
