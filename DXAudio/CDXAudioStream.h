@@ -94,20 +94,20 @@ protected:
 	/* Child class must read/write stream data and call their callback's process method */
 	virtual void ImplProcess() PURE;
 
-	CComPtr<IMMDeviceEnumerator> m_Enumerator;
-	FLOAT m_SampleRate;
+	CComPtr<IMMDeviceEnumerator> m_Enumerator; //The WASAPI device enumerator
+	FLOAT m_SampleRate; //The sample rate requested by the application - input/output will be resampled to this
 
 private:
-	long m_RefCount;
+	long m_RefCount; //Reference counter
 
-	HANDLE m_StartEvent;
-	HANDLE m_StopEvent;
-	HANDLE m_DeviceChangeEvent;
-	HANDLE m_PropertyChangeEvent;
-	HANDLE m_WaitEvent;
-	HANDLE m_HaltEvent;
+	HANDLE m_StartEvent; //Used as a message for starting the stream
+	HANDLE m_StopEvent; //Used as a message for stopping the stream
+	HANDLE m_DeviceChangeEvent; //Used as a message for checking for default device changes
+	HANDLE m_PropertyChangeEvent; //Used as a message for checking for property value changes
+	HANDLE m_WaitEvent; //Used as the callback event for WASAPI
+	HANDLE m_HaltEvent; //Used for closing the thread/stream
 
-	HANDLE m_Thread;
+	HANDLE m_Thread; //Handle to the thread (one thread for each stream)
 
 	//IUnknown methods
 
