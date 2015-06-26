@@ -31,6 +31,7 @@
 
 #pragma comment(lib, "libsamplerate.lib")
 
+/* Creates an output stream. */
 static HRESULT DXAudioCreateOutputStream (
 	FLOAT SampleRate,
 	IDXAudioCallback* pDXAudioCallback,
@@ -52,6 +53,7 @@ static HRESULT DXAudioCreateOutputStream (
 	return S_OK;
 }
 
+/* Creates an input stream. */
 static HRESULT DXAudioCreateInputStream (
 	FLOAT SampleRate,
 	IDXAudioCallback* pDXAudioCallback,
@@ -73,6 +75,7 @@ static HRESULT DXAudioCreateInputStream (
 	return S_OK;
 }
 
+/* Creates a loopback stream. */
 static HRESULT DXAudioCreateLoopbackStream (
 	FLOAT SampleRate,
 	IDXAudioCallback* pDXAudioCallback,
@@ -94,6 +97,7 @@ static HRESULT DXAudioCreateLoopbackStream (
 	return S_OK;
 }
 
+/* Creates a duplex stream. */
 static HRESULT DXAudioCreateDuplexStream (
 	FLOAT SampleRate,
 	IDXAudioCallback* pDXAudioCallback,
@@ -115,6 +119,7 @@ static HRESULT DXAudioCreateDuplexStream (
 	return S_OK;
 }
 
+/* Creates an echo stream. */
 static HRESULT DXAudioCreateEchoStream (
 	FLOAT SampleRate,
 	IDXAudioCallback* pDXAudioCallback,
@@ -136,6 +141,7 @@ static HRESULT DXAudioCreateEchoStream (
 	return S_OK;
 }
 
+/* Entry point into the dll - creates a stream as specified by the application. */
 HRESULT DXAudioCreateStream (
 	const DXAUDIO_STREAM_DESC* pDesc,
 	IDXAudioCallback* pDXAudioCallback,
