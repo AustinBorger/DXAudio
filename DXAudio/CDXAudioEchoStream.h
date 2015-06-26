@@ -30,6 +30,8 @@
 #include "ClientReader.h"
 #include "ClientWriter.h"
 
+/* This class is a final implementation of IDXAudioStream.  It is used for streams
+** that both loopback/write data to/from the default audio output endpoint. */
 class CDXAudioEchoStream : public CDXAudioStream {
 public:
 	CDXAudioEchoStream();
@@ -38,39 +40,54 @@ public:
 
 	//IDXAudioStream methods
 
+	/* Returns the type of the stream */
 	DXAUDIO_STREAM_TYPE STDMETHODCALLTYPE GetStreamType() final {
 		return DXAUDIO_STREAM_TYPE_ECHO;
 	}
 
 	//CDXAudioStream methods
 
+	/* Initializes all stream objects and data */
 	void ImplInitialize() final;
 
+	/* Calls Start() on the client */
 	void ImplStart() final;
 
+	/* Calls Stop() on the client */
 	void ImplStop() final;
 
+	/* Reacts to a default device change by checking to see if the held device is no longer default,
+	** then re-initializes to the new default device */
 	void ImplDeviceChange() final;
 
+	/* Reacts to a change in an endpoint property value by checking to see if the client is still valid -
+	** if not, the client is re-initialized */
 	void ImplPropertyChange() final;
 
+	/* Reads data from the stream, calls Process() on the callback object, then writes the given data
+	** to the stream. */
 	void ImplProcess() final;
 
 	//New methods
 
+	/* Checks to see if the callback is valid, then calls CDXAudioStream::Initialize() */
 	HRESULT Initialize(FLOAT SampleRate, IDXAudioCallback* pDXAudioCallback);
 
 private:
-	CComPtr<IMMDevice> m_OutputDevice;
-	CComPtr<IDXAudioReadWriteCallback> m_ReadWriteCallback;
-	LPWSTR m_DeviceID;
-	ClientReader m_ClientReader;
-	ClientWriter m_ClientWriter;
-	bool m_Running;
+	CComPtr<IMMDevice> m_OutputDevice; //The device we're reading to / writing from
+	CComPtr<IDXAudioReadWriteCallback> m_ReadWriteCallback; //The callback object
+	LPWSTR m_DeviceID; //The device's unique identifier
+	ClientReader m_ClientReader; //Used for reading loopback data from the stream
+	ClientWriter m_ClientWriter; //Used for writing output data to the stream
+	bool m_Running; //Indicates whether or not the stream is running (used for routing)
 
+	/* Initializes the client reader object */
 	void InitClientReader();
 
+	/* Initializes the client writer object */
 	void InitClientWriter();
 
+	/* Responds to an HRESULT - if there is a failure, it will call the OnObjectFailure() method
+	** on the callback object.  Otherwise, it will return S_OK. */
 	HRESULT HandleHR(HRESULT hr);
 };
