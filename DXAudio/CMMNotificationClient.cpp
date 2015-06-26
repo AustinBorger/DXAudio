@@ -54,13 +54,13 @@ ULONG CMMNotificationClient::Release() {
 }
 
 HRESULT CMMNotificationClient::OnDefaultDeviceChanged(EDataFlow Flow, ERole Role, LPCWSTR DeviceID) {
-	m_Listener.OnDefaultDeviceChanged();
+	m_Listener.OnDefaultDeviceChanged(); //redirect the call to the listener with no data
 
 	return S_OK;
 }
 
 HRESULT CMMNotificationClient::OnPropertyValueChanged(LPCWSTR DeviceID, const PROPERTYKEY Key) {
-	m_Listener.OnPropertyValueChanged();
+	m_Listener.OnPropertyValueChanged(); //redirect the call to the listener with no data
 
 	return S_OK;
 }

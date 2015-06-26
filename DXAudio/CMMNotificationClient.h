@@ -29,13 +29,16 @@
 
 #include "CMMNotificationClientListener.h"
 
-class CDXAudioFactory;
-
+/* This is an implementation of IMMNotificationClient.  It is used for notifications
+** of changes in the default device or property changes of a device.   Must be registered
+** to an IMMDeviceEnumerator object to function. */
 class CMMNotificationClient : public IMMNotificationClient {
 public:
 	CMMNotificationClient(CMMNotificationClientListener& Listener);
 
 	~CMMNotificationClient();
+
+	//IUnknown methods
 
 	STDMETHODIMP QueryInterface(REFIID riid, void** ppvObject) final;
 
@@ -43,18 +46,23 @@ public:
 
 	ULONG STDMETHODCALLTYPE Release();
 
+	//IMMNotificationClient methods
+
+	/* Called when the default device has changed on any flow or role */
 	STDMETHODIMP OnDefaultDeviceChanged(EDataFlow Flow, ERole Role, LPCWSTR DeviceID) final;
 
-	STDMETHODIMP OnDeviceAdded(LPCWSTR DeviceID) final { return S_OK; }
+	STDMETHODIMP OnDeviceAdded(LPCWSTR DeviceID) final { return S_OK; } //Not used
 
-	STDMETHODIMP OnDeviceRemoved(LPCWSTR DeviceID) final { return S_OK; }
+	STDMETHODIMP OnDeviceRemoved(LPCWSTR DeviceID) final { return S_OK; } //Not used
 
-	STDMETHODIMP OnDeviceStateChanged(LPCWSTR DeviceID, DWORD State) final { return S_OK; }
+	STDMETHODIMP OnDeviceStateChanged(LPCWSTR DeviceID, DWORD State) final { return S_OK; } //Not used
 
+	/* Called when a property value of an endpoint has changed */
 	STDMETHODIMP OnPropertyValueChanged(LPCWSTR DeviceID, const PROPERTYKEY Key) final;
 
 private:
 	long m_RefCount;
 
+	//Calls to OnDefaultDeviceChanged() and OnPropertyValueChanged() are redirected to the listener
 	CMMNotificationClientListener& m_Listener;
 };

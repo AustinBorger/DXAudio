@@ -26,8 +26,14 @@
 #include <atlbase.h>
 #include <mmdeviceapi.h>
 
+/* Interface used by CMMNotificationClient to notify changes in the default device
+** and the properties of audio endpoints.
+** The reason no data is used in these callbacks is because the calls are handled on a separate
+** thread via events, and a mutex would be overkill for something we can figure out without the data. */
 struct CMMNotificationClientListener {
+	/* Called when the default device is changed on some flow or role - must be implemented */
 	virtual void OnDefaultDeviceChanged() PURE;
 
+	/* Called when a property of an endpoint has changed - must be implemented */
 	virtual void OnPropertyValueChanged() PURE;
 };
