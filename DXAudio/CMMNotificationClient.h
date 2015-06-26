@@ -61,7 +61,7 @@ public:
 	STDMETHODIMP OnPropertyValueChanged(LPCWSTR DeviceID, const PROPERTYKEY Key) final;
 
 private:
-	long m_RefCount;
+	long m_RefCount; //Reference counter
 
 	//Calls to OnDefaultDeviceChanged() and OnPropertyValueChanged() are redirected to the listener
 	CMMNotificationClientListener& m_Listener;
