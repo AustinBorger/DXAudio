@@ -189,7 +189,7 @@ void CDXAudioOutputStream::ImplProcess() {
 	); HANDLE_HR();
 
 	//Subtract the integral number of samples from the decimal number of samples.
-	//If there is a remainder > 1.0, it is used in the next period to generate an extra
+	//If there is a remainder > 0.5, it is used in the next period to generate an extra
 	//sample.  This keeps the stream from running out of padding - if we ignored
 	//the extra decimal, eventually we wouldn't be giving the stream enough samples.
 	//When this happens, we'll hear an annoying buzz and the stream will be temporally
