@@ -66,7 +66,7 @@ HRESULT CDXAudioOutputStream::Initialize(FLOAT SampleRate, IDXAudioCallback* pDX
 void CDXAudioOutputStream::ImplInitialize() {
 	HRESULT hr = S_OK;
 
-	//Get the default audio device
+	//Get the default audio output device
 	hr = m_Enumerator->GetDefaultAudioEndpoint (
 		eRender,
 		eConsole,
@@ -120,11 +120,11 @@ void CDXAudioOutputStream::ImplDeviceChange() {
 		m_OutputDevice.Release();
 		CoTaskMemFree(m_DeviceID);
 
-		//Set our device to the new default one
+		//Set our device and id to the new default one
 		m_OutputDevice = DefaultDevice;
 		m_DeviceID = DefaultDeviceID;
 
-		//Re-initialize the client writer object
+		//Re-initialize the client writer
 		InitClientWriter();
 
 		//If the stream was running before, we need to start it up again
