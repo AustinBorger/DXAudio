@@ -41,7 +41,7 @@ that it is smaller, and provides its functionality in a different package
 
 DXAudio also does not attempt at providing the same set of functionality
 that WASAPI does.  This library only deals with default audio endpoints.
-Since this is all most games care about, there is no need to include
+Since this is all most games care about, there was no effort to include
 the functionality to choose endpoints that are not the default.
 
 DXAudio assumes an environment with no exclusive use of default audio endpoints.
@@ -96,7 +96,8 @@ You must implement one of these interfaces.  There are two methods in each inter
     virtual VOID STDMETHODCALLTYPE Process(FLOAT SampleRate, FLOAT* OutputBuffer, UINT Frames) PURE;
 
 The above `Process()` method is for a write callback.  The other two callbacks have their own (very similar) versions of this
-method.  Both methods must be implemented by your child class.
+method.  Both methods must be implemented by your child class.  As with all COM interfaces, `QueryInterface()`, `AddRef()`,
+and `Release()` must also be implemented.
 
 `OnObjectFailure()` is used for reporting that something went wrong.  The HRESULT received will be that which
 was returned by WASAPI on one of its method calls.  It will not let you know that you've used the library incorrectly, it is
@@ -112,3 +113,18 @@ application's requested sample rate and that of the endpoint.
 Note that you should not call stream interface methods from within `Process()`,
 as it occurs on a separate thread and the `IDXAudioStream` interface is not thread-safe.  COM is initialized in
 apartment-threaded mode, and nothing is done within DXAudio to prevent race conditions on behalf of the application.
+
+#### 3. Create the stream
+
+A stream can be created through `DXAudioCreateStream()`:
+
+    HRESULT DXAudioCreateStream (
+        const DXAUDIO_STREAM_DESC* pDesc,
+        IDXAudioCallback* pDXAudioCallback,
+        IDXAudioStream** ppDXAudioStream
+    );
+    
+The use of this function should be pretty self-explanatory.  This function does not handle nullptr exceptions, so make sure
+the variables you hand it are valid.  This function will return `E_INVALIDARG` if the wrong type of callback interface is provided (checked via `QueryInterface()`, which you must implement correctly).
+
+#### 4. Use the stream
