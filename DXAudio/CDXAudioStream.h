@@ -29,11 +29,14 @@
 #include "CMMNotificationClientListener.h"
 #include "QueryInterface.h"
 
+/* This is the base class for all streams - it handles threading issues */
 class CDXAudioStream abstract : public IDXAudioStream, public CMMNotificationClientListener {
 public:
 	CDXAudioStream();
 
 	virtual ~CDXAudioStream();
+
+	//IUnknown methods
 
 	ULONG STDMETHODCALLTYPE AddRef() {
 		return ++m_RefCount;
@@ -43,7 +46,7 @@ public:
 		m_RefCount--;
 
 		if (m_RefCount <= 0) {
-			delete this;
+			delete this; //this can be implemented here, since the destructor is virtual
 			return 0;
 		}
 
@@ -51,32 +54,44 @@ public:
 	}
 
 protected:
+	/* Initializes the thread - must be called by child class in its Initialize() method */
 	HRESULT Initialize();
 
+	/* Returns a handle to the event used for waking the thread each device period */
 	HANDLE GetWaitEvent() {
 		return m_WaitEvent;
 	}
 
+	/* Calling this will exit the thread gracefully */
+	/* This must be the first thing called in the destructor of the child class, before WaitForThread() */
 	void Halt() {
 		SetEvent(m_HaltEvent);
 	}
 
+	/* Calling this will wait for the thread to die */
+	/* This must be the second thing called in the destructor of the child class, after Halt() */
 	void WaitForThread() {
 		WaitForSingleObject(m_Thread, INFINITE);
 	}
 
 	//To be implemented
 
+	/* Child class must initialize the stream objects */
 	virtual void ImplInitialize() PURE;
 
+	/* Child class must call Start() on the client */
 	virtual void ImplStart() PURE;
 	
+	/* Child class must call Stop() on the client */
 	virtual void ImplStop() PURE;
 
+	/* Child class must check to see if their device is no longer default and re-initialize */
 	virtual void ImplDeviceChange() PURE;
 
+	/* Child class must check if their client is invalidated and re-initialize */
 	virtual void ImplPropertyChange() PURE;
 
+	/* Child class must read/write stream data and call their callback's process method */
 	virtual void ImplProcess() PURE;
 
 	CComPtr<IMMDeviceEnumerator> m_Enumerator;
@@ -104,29 +119,36 @@ private:
 
 	//IDXAudioStream methods
 
+	/* Sets the start event, eventually causing the stream to start */
 	VOID STDMETHODCALLTYPE Start() final {
 		SetEvent(m_StartEvent);
 	}
 
+	/* Sets the stop event, eventually causing the stream to stop */
 	VOID STDMETHODCALLTYPE Stop() final {
 		SetEvent(m_StopEvent);
 	}
 
+	/* Returns the sample rate of the stream */
 	FLOAT STDMETHODCALLTYPE GetSampleRate() final {
 		return m_SampleRate;
 	}
 
 	//CMMNotificationClientListener methods
 
+	/* Called when the user changes the default device for any data flow or role */
 	virtual void OnDefaultDeviceChanged() final {
 		SetEvent(m_DeviceChangeEvent);
 	}
 
+	/* Called when the user changes properties such as sample rate on an endpoint */
 	virtual void OnPropertyValueChanged() final {
 		SetEvent(m_PropertyChangeEvent);
 	}
 
+	/* The static thread entry point */
 	static DWORD __stdcall StaticStreamThreadEntry(LPVOID Data);
 
+	/* The non-static thread entry point, called by StaticStreamThreadEntry() */
 	DWORD StreamThreadEntry();
 };

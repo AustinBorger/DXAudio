@@ -62,6 +62,7 @@ HRESULT CDXAudioStream::Initialize() {
 	EVENT_INIT(m_WaitEvent);
 	EVENT_INIT(m_HaltEvent);
 
+	//Everything will happen on a separate thread
 	m_Thread = CreateThread (
 		NULL,
 		0,
@@ -71,6 +72,7 @@ HRESULT CDXAudioStream::Initialize() {
 		NULL
 	);
 
+	//If m_Thread is NULL, an error occurred
 	if (m_Thread == NULL) {
 		return HRESULT_FROM_WIN32(GetLastError());
 	}
@@ -108,12 +110,14 @@ DWORD CDXAudioStream::StreamThreadEntry() {
 
 	static const UINT nEvents = sizeof(Events) / sizeof(HANDLE);
 
+	//Initialize the COM server
 	hr = CoInitializeEx (
 		NULL,
 		COINIT_SPEED_OVER_MEMORY |
 		COINIT_APARTMENTTHREADED
 	); CHECK_HR();
 
+	//Create the device enumerator
 	hr = CoCreateInstance (
 		__uuidof(MMDeviceEnumerator),
 		NULL,
@@ -122,17 +126,20 @@ DWORD CDXAudioStream::StreamThreadEntry() {
 		(void**)(&m_Enumerator)
 	); CHECK_HR();
 
-	CMMNotificationClient NotificationClient(*static_cast<CMMNotificationClientListener*>(this));
+	CMMNotificationClient NotificationClient(*this);
 
+	//Register the callback for default device / property changes
 	hr = m_Enumerator->RegisterEndpointNotificationCallback (
 		&NotificationClient
 	); CHECK_HR();
 
+	//Initialize the child object
 	ImplInitialize();
 
 	hr = S_OK;
 
 	while (run) {
+		//Wait for a message (event)
 		dwResult = WaitForMultipleObjectsEx (
 			nEvents,
 			Events,
@@ -142,37 +149,38 @@ DWORD CDXAudioStream::StreamThreadEntry() {
 		);
 
 		switch (dwResult) {
-			case SM_PROCESS: {
+			case SM_PROCESS: { //Process
 				ImplProcess();
 			} break;
 
-			case SM_START: {
+			case SM_START: { //Start the stream
 				ImplStart();
 			} break;
 
-			case SM_STOP: {
+			case SM_STOP: { //Stop the stream
 				ImplStop();
 			} break;
 
-			case SM_DEVICECHANGE: {
+			case SM_DEVICECHANGE: { //The default device has changed somewhere
 				ImplDeviceChange();
 			} break;
 
-			case SM_PROPERTYCHANGE: {
+			case SM_PROPERTYCHANGE: { //A property has changed somewhere
 				ImplPropertyChange();
 			} break;
 
-			case SM_CLOSE: {
+			case SM_CLOSE: { //Close the stream
 				run = false;
 			} break;
 
-			default: {
+			default: { //Error occurred
 				run = false;
 				hr = E_FAIL;
 			} break;
 		}
 	}
 
+	// Prevent any more notifications
 	m_Enumerator->UnregisterEndpointNotificationCallback (
 		&NotificationClient
 	);
