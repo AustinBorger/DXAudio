@@ -29,6 +29,8 @@
 #include "CDXAudioStream.h"
 #include "ClientReader.h"
 
+/* This class is a final implementation of IDXAudioStream.  It is used for streams
+** that only read data from the default audio input endpoint. */
 class CDXAudioInputStream : public CDXAudioStream {
 public:
 	CDXAudioInputStream();
@@ -37,36 +39,49 @@ public:
 
 	//IDXAudioStream methods
 
+	/* Returns the type of the stream */
 	DXAUDIO_STREAM_TYPE STDMETHODCALLTYPE GetStreamType() final {
 		return DXAUDIO_STREAM_TYPE_INPUT;
 	}
 
 	//CDXAudioStream methods
 
+	/* Initializes all stream objects and data */
 	void ImplInitialize() final;
 
+	/* Calls Start() on the client */
 	void ImplStart() final;
 
+	/* Calls Stop() on the client */
 	void ImplStop() final;
 
+	/* Reacts to a default device change by checking to see if the held device is no longer default,
+	** then re-initializes to the new default device */
 	void ImplDeviceChange() final;
 
+	/* Reacts to a change in an endpoint property value by checking to see if the client is still valid -
+	** if not, the client is re-initialized */
 	void ImplPropertyChange() final;
 
+	/* Reads data from the stream, then calls Process() on the callback object */
 	void ImplProcess() final;
 
 	//New methods
 
+	/* Checks to see if the callback is valid, then calls CDXAudioStream::Initialize() */
 	HRESULT Initialize(FLOAT SampleRate, IDXAudioCallback* pDXAudioCallback);
 
 private:
-	CComPtr<IMMDevice> m_InputDevice;
-	CComPtr<IDXAudioReadCallback> m_ReadCallback;
-	LPWSTR m_DeviceID;
-	ClientReader m_ClientReader;
-	bool m_Running;
+	CComPtr<IMMDevice> m_InputDevice; //The device we're reading from
+	CComPtr<IDXAudioReadCallback> m_ReadCallback; //The callback object
+	LPWSTR m_DeviceID; //The input device's unique identifier
+	ClientReader m_ClientReader; //Used for reading data from the stream
+	bool m_Running; //Indicates whether or not the stream is running (used for routing)
 
+	/* Initializes the client reader object */
 	void InitClientReader();
 
+	/* Responds to an HRESULT - if there is a failure, it will call the OnObjectFailure() method
+	** on the callback object.  Otherwise, it will return S_OK. */
 	HRESULT HandleHR(HRESULT hr);
 };
