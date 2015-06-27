@@ -153,3 +153,29 @@ These methods should be pretty self-explanatory.
 
 All you have to do to include DXAudio in your project is to download the "DXAudio.h" header and dll and link the library.
 These builds will be kept up-to-date with the source code, so you don't have to build it if you don't want to.  This directory contains project files for Visual Studio and Code Blocks, as well as library files for VC++ and MinGW.
+
+License
+-------------
+DXAudio is released under the GPLv3 license.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Contributors
+-------------
+DXAudio uses Secret Rabbit Code for resampling.  This library was developed by
+Erik de Castro Lopo, and is released under GPLv2.
+
+New contributors are very welcome, as currently this code base is maintained by
+just one person (me).  If DXAudio proves useful for you, but doesn't meet your
+standards, please send feedback to my email at <aaborger@gmail.com>.
