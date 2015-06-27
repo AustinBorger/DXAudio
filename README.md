@@ -128,3 +128,23 @@ The use of this function should be pretty self-explanatory.  This function does 
 the variables you hand it are valid.  This function will return `E_INVALIDARG` if the wrong type of callback interface is provided (checked via `QueryInterface()`, which you must implement correctly).
 
 #### 4. Use the stream
+
+The stream behaves according to the following state diagram:
+
+![Stream State Diagram](https://github.com/AustinBorger/DXAudio/blob/master/DXAudioStateDiagram.png)
+
+The stream will automatically be stopped upon release of the COM object.
+
+The `IDXAudioStream` interface is defined below:
+
+    struct __declspec(uuid("58127943-2ecc-4e74-845b-e4933263a880")) IDXAudioStream : public IUnknown {
+    	virtual VOID STDMETHODCALLTYPE Start() PURE;
+    	
+    	virtual VOID STDMETHODCALLTYPE Stop() PURE;
+    	
+    	virtual FLOAT STDMETHODCALLTYPE GetSampleRate() PURE;
+    	
+    	virtual DXAUDIO_STREAM_TYPE STDMETHODCALLTYPE GetStreamType() PURE;
+    };
+    
+These methods should be pretty self-explanatory.
