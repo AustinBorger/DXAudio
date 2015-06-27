@@ -33,7 +33,7 @@
 
 /* This class is a final implementation of IDXAudioStream.  It is used for streams
 ** that only output data to the default audio output endpoint. */
-class CDXAudioOutputStream final : public CDXAudioStream {
+class CDXAudioOutputStream : public CDXAudioStream {
 public:
 	CDXAudioOutputStream();
 

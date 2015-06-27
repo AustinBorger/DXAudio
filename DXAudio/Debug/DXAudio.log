@@ -1,10 +1,17 @@
-﻿Build started 6/24/2015 6:51:49 PM.
+﻿Build started 6/26/2015 11:07:46 PM.
      1>Project "C:\Users\Austin\Documents\COM Objects\DXAudio\DXAudio\DXAudio.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I../Include/ /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _DXAUDIO_DLL_PROJECT /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ClientReader.cpp ClientWriter.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I../Include/ /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _DXAUDIO_DLL_PROJECT /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt CDXAudioDuplexStream.cpp CDXAudioEchoStream.cpp CDXAudioInputStream.cpp CDXAudioLoopbackStream.cpp CDXAudioOutputStream.cpp CDXAudioStream.cpp CMMNotificationClient.cpp ClientReader.cpp ClientWriter.cpp DXAudio.cpp
+         DXAudio.cpp
          ClientWriter.cpp
          ClientReader.cpp
-     1>c:\users\austin\documents\com objects\dxaudio\dxaudio\clientreader.cpp(73): warning C4244: '=' : conversion from 'REFERENCE_TIME' to 'UINT32', possible loss of data
+         CMMNotificationClient.cpp
+         CDXAudioStream.cpp
+         CDXAudioOutputStream.cpp
+         CDXAudioLoopbackStream.cpp
+         CDXAudioInputStream.cpp
+         CDXAudioEchoStream.cpp
+         CDXAudioDuplexStream.cpp
          Generating Code...
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.dll" /INCREMENTAL /NOLOGO /LIBPATH:../Lib/Debug/ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.lib" /MACHINE:X86 /DLL Debug\CDXAudioDuplexStream.obj
@@ -23,4 +30,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:02.03
+Time Elapsed 00:00:07.75

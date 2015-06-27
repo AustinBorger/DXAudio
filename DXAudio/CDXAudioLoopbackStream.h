@@ -32,7 +32,7 @@
 
 /* This class is a final implementation of IDXAudioStream.  It is used for streams
 ** that only read what's curently playing on the default audio output endpoint. */
-class CDXAudioLoopbackStream final : public CDXAudioStream {
+class CDXAudioLoopbackStream : public CDXAudioStream {
 public:
 	CDXAudioLoopbackStream();
 
