@@ -86,15 +86,17 @@ audio output endpoint and writes data to that same endpoint.
 
 There are three callback interfaces: `IDXAudioReadCallback`, `IDXAudioWriteCallback`, and `IDXAudioReadWriteCallback`.
 
-`IDXReadCallback` is used for input and loopback streams.<br>
-`IDXWriteCallback` is used for output streams.<br>
-`IDXReadWriteCallback` is used for duplex and echo streams.
+`IDXAudioReadCallback` is used for input and loopback streams.<br>
+`IDXAudioWriteCallback` is used for output streams.<br>
+`IDXAudioReadWriteCallback` is used for duplex and echo streams.
 
 You must implement one of these interfaces.  There are two methods in each interface:
 
-    virtual VOID STDMETHODCALLTYPE OnObjectFailure(HRESULT hr) PURE;
-    virtual VOID STDMETHODCALLTYPE Process(FLOAT SampleRate, FLOAT* OutputBuffer, UINT Frames) PURE;
-
+    struct IDXAudioWriteCallback : public IDXAudioCallback {
+        void OnObjectFailure(HRESULT hr);
+        void Process(FLOAT SampleRate, FLOAT* OutputBuffer, UINT Frames);
+    };
+    
 The above `Process()` method is for a write callback.  The other two callbacks have their own (very similar) versions of this
 method.  Both methods must be implemented by your child class.  As with all COM interfaces, `QueryInterface()`, `AddRef()`,
 and `Release()` must also be implemented.
@@ -138,13 +140,10 @@ The stream will automatically be stopped upon release of the COM object.
 The `IDXAudioStream` interface is defined below:
 
     struct IDXAudioStream : public IUnknown {
-    	virtual VOID STDMETHODCALLTYPE Start() PURE;
-    	
-    	virtual VOID STDMETHODCALLTYPE Stop() PURE;
-    	
-    	virtual FLOAT STDMETHODCALLTYPE GetSampleRate() PURE;
-    	
-    	virtual DXAUDIO_STREAM_TYPE STDMETHODCALLTYPE GetStreamType() PURE;
+    	void Start();
+    	void Stop();
+    	FLOAT GetSampleRate();
+    	DXAUDIO_STREAM_TYPE GetStreamType();
     };
     
 These methods should be pretty self-explanatory.
