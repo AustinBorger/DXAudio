@@ -137,7 +137,7 @@ The stream will automatically be stopped upon release of the COM object.
 
 The `IDXAudioStream` interface is defined below:
 
-    struct __declspec(uuid("58127943-2ecc-4e74-845b-e4933263a880")) IDXAudioStream : public IUnknown {
+    struct IDXAudioStream : public IUnknown {
     	virtual VOID STDMETHODCALLTYPE Start() PURE;
     	
     	virtual VOID STDMETHODCALLTYPE Stop() PURE;
@@ -148,3 +148,8 @@ The `IDXAudioStream` interface is defined below:
     };
     
 These methods should be pretty self-explanatory.
+
+#### And that's it!
+
+All you have to do to include DXAudio in your project is to download the "DXAudio.h" header and dll and link the library.
+These builds will be kept up-to-date with the source code, so you don't have to build it if you don't want to.  This directory contains project files for Visual Studio and Code Blocks, as well as library files for VC++ and MinGW.
