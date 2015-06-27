@@ -152,7 +152,8 @@ These methods should be pretty self-explanatory.
 #### And that's it!
 
 All you have to do to include DXAudio in your project is to download the "DXAudio.h" header and dll and link the library.
-These builds will be kept up-to-date with the source code, so you don't have to build it if you don't want to.  This directory contains project files for Visual Studio and Code Blocks, as well as library files for VC++ and MinGW.
+These builds will be kept up-to-date with the source code, so you don't have to build it if you don't want to.  Note that
+only Visual Studio is supported.
 
 License
 -------------
