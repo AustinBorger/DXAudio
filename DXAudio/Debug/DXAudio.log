@@ -1,10 +1,8 @@
-﻿Build started 6/26/2015 11:07:46 PM.
+﻿Build started 6/26/2015 11:23:23 PM.
      1>Project "C:\Users\Austin\Documents\COM Objects\DXAudio\DXAudio\DXAudio.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I../Include/ /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _DXAUDIO_DLL_PROJECT /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt CDXAudioDuplexStream.cpp CDXAudioEchoStream.cpp CDXAudioInputStream.cpp CDXAudioLoopbackStream.cpp CDXAudioOutputStream.cpp CDXAudioStream.cpp CMMNotificationClient.cpp ClientReader.cpp ClientWriter.cpp DXAudio.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I../Include/ /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _DXAUDIO_DLL_PROJECT /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt CDXAudioDuplexStream.cpp CDXAudioEchoStream.cpp CDXAudioInputStream.cpp CDXAudioLoopbackStream.cpp CDXAudioOutputStream.cpp CDXAudioStream.cpp CMMNotificationClient.cpp DXAudio.cpp
          DXAudio.cpp
-         ClientWriter.cpp
-         ClientReader.cpp
          CMMNotificationClient.cpp
          CDXAudioStream.cpp
          CDXAudioOutputStream.cpp
@@ -24,10 +22,11 @@
          Debug\CMMNotificationClient.obj
          Debug\DXAudio.obj
          Debug\CDXAudioStream.obj
+         LINK : C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.dll not found or not built by the last incremental link; performing full link
             Creating library C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.lib and object C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.exp
          DXAudio.vcxproj -> C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.dll
      1>Done Building Project "C:\Users\Austin\Documents\COM Objects\DXAudio\DXAudio\DXAudio.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:07.75
+Time Elapsed 00:00:06.46

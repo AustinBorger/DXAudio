@@ -23,8 +23,14 @@
 #pragma once
 
 #include "DXAudio.h"
+
+#ifdef _MSC_VER
 #include <comdef.h>
 #include <atlbase.h>
+#else
+#include <Windows.h>
+#endif
+
 #include <mmdeviceapi.h>
 #include "CDXAudioStream.h"
 #include "ClientReader.h"

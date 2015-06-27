@@ -41,7 +41,7 @@ struct DXAUDIO_STREAM_DESC {
 
 /* IDXAudioStream is the interface for all DXAudio streams. */
 struct __declspec(uuid("58127943-2ecc-4e74-845b-e4933263a880")) IDXAudioStream : public IUnknown {
-	/* Start() causes the stream to become active.  When this happens, your stream callback will 
+	/* Start() causes the stream to become active.  When this happens, your stream callback will
 	** be called repeatedly on a separate thread that is unique to the stream.  Note that the
 	** stream is initialized in a stopped state, so this must be called for the stream to
 	** begin playing. */
@@ -64,7 +64,7 @@ struct __declspec(uuid("58127943-2ecc-4e74-845b-e4933263a880")) IDXAudioStream :
 /* IDXAudioCallback is the parent interface for all stream callbacks.   This should not be directly inherited.
 ** Instead, inherit from either of IDXAudioReadCallback, IDXAudioWriteCallback, or IDXAudioReadWriteCallback. */
 struct __declspec(uuid("b19d3575-b174-409c-9a27-1b8bf5d938d4")) IDXAudioCallback : public IUnknown {
-	/* OnObjectFailure() is a callback mechanism for error reporting.  If something unexpected happens, 
+	/* OnObjectFailure() is a callback mechanism for error reporting.  If something unexpected happens,
 	** or the library is operating out of its expected conditions, then this will be called with the
 	** HRESULT that was provided by the Windows API when the error occurred. Note that this must be implemented. */
 	virtual VOID STDMETHODCALLTYPE OnObjectFailure(HRESULT hr) PURE;
@@ -92,10 +92,10 @@ struct __declspec(uuid("34ae23e3-6e51-4c41-86dd-37d0461ac6ae")) IDXAudioWriteCal
 
 /* IDXAudioReadWriteCallback is the callback interface for duplex and echo streams. */
 struct __declspec(uuid("857d0781-1b48-4494-b829-24f3b731ff6b")) IDXAudioReadWriteCallback : public IDXAudioCallback {
-	/* Process() is called once every stream period.  This retrieves input data from the default input endpoint and 
+	/* Process() is called once every stream period.  This retrieves input data from the default input endpoint and
 	** delivers your output data to the default output endpoint at the given sample rate.
 	** [Frames] represents the number of floating-point stereo samples available in the [AudioIn] buffer, as well as
-	** the number of samples you must produce to the [AudioOut] buffer. 
+	** the number of samples you must produce to the [AudioOut] buffer.
 	** Note that this value is likely to frequently change between calls due to the process of resampling.
 	** You should write your application to be flexible of this number.
 	** Note that this must be implemented. */
