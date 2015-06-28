@@ -133,7 +133,7 @@ the variables you hand it are valid.  This function will return `E_INVALIDARG` i
 
 The stream behaves according to the following state diagram:
 
-![Stream State Diagram](https://github.com/AustinBorger/DXAudio/blob/master/DXAudioStateDiagram.png)
+![Stream State Diagram](https://github.com/AustinBorger/DXAudio/blob/master/UML/DXAudioStateDiagram.png)
 
 The stream will automatically be stopped upon release of the COM object.
 
