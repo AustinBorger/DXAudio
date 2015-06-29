@@ -1,7 +1,7 @@
 DXAudio
 =========
 
-DXAudio is a small layer over WASAPI written in C++ that
+DXAudio is a small layer over WASAPI written for C++ applications that
 simplifies the process of creating an audio stream.  As
 a Windows-specific library, it makes use of the COM ABI.
 Its intent is to provide a fast, easy way to create a
