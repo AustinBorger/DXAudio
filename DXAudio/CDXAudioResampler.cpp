@@ -1,10 +1,12 @@
 #include "CDXAudioResampler.h"
 
+//Set reference count to 1, null out pointer
 CDXAudioResampler::CDXAudioResampler() :
 m_RefCount(1),
 m_SrcState(nullptr)
 { }
 
+//Release SRC_STATE if it exists
 CDXAudioResampler::~CDXAudioResampler() {
 	if (m_SrcState != nullptr) {
 		src_delete(m_SrcState);
@@ -12,6 +14,7 @@ CDXAudioResampler::~CDXAudioResampler() {
 	}
 }
 
+//Create the SRC_STATE object
 HRESULT CDXAudioResampler::Initialize() {
 	int error = 0;
 
@@ -24,6 +27,7 @@ HRESULT CDXAudioResampler::Initialize() {
 	return S_OK;
 }
 
+//Resample the data
 VOID CDXAudioResampler::Process (
 	FLOAT* InBuffer,
 	UINT InBufferFrames,

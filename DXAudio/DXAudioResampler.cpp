@@ -3,6 +3,7 @@
 
 #include <atlbase.h>
 
+/* Create the CDXAudioResampler object. */
 HRESULT DXAudioCreateResampler(IDXAudioResampler** ppDXAudioResampler) {
 	HRESULT hr = S_OK;
 

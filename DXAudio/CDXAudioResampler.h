@@ -4,6 +4,7 @@
 #include "samplerate.h"
 #include "QueryInterface.h"
 
+/* Implmentation of IDXAudioResampler. */
 class CDXAudioResampler : public IDXAudioResampler {
 public:
 	CDXAudioResampler();
@@ -35,6 +36,7 @@ public:
 
 	//IDXAudioResampler methods
 
+	/* Resamples the data. */
 	VOID STDMETHODCALLTYPE Process (
 		FLOAT* InBuffer,
 		UINT InBufferFrames,
@@ -45,6 +47,7 @@ public:
 
 	//New methods
 
+	/* Creates the SRC_STATE object. */
 	HRESULT Initialize();
 
 private:
