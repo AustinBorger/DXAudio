@@ -102,10 +102,12 @@ struct __declspec(uuid("857d0781-1b48-4494-b829-24f3b731ff6b")) IDXAudioReadWrit
 	virtual VOID STDMETHODCALLTYPE Process(FLOAT SampleRate, FLOAT* AudioIn, FLOAT* AudioOut, UINT Frames) PURE;
 };
 
-#ifdef _DXAUDIO_DLL_PROJECT
-#define _DXAUDIO_EXPORT_TAG __declspec(dllexport)
-#else
-#define _DXAUDIO_EXPORT_TAG __declspec(dllimport)
+#ifndef _DXAUDIO_EXPORT_TAG
+	#ifdef _DXAUDIO_DLL_PROJECT
+		#define _DXAUDIO_EXPORT_TAG __declspec(dllexport)
+	#else
+		#define _DXAUDIO_EXPORT_TAG __declspec(dllimport)
+	#endif
 #endif
 
 /* DXAudioCreateStream() is used to create any audio stream.  [ppDXAudioCallback] must inherit from

@@ -75,11 +75,13 @@
     <ClInclude Include="CDXAudioInputStream.h" />
     <ClInclude Include="CDXAudioLoopbackStream.h" />
     <ClInclude Include="CDXAudioOutputStream.h" />
+    <ClInclude Include="CDXAudioResampler.h" />
     <ClInclude Include="ClientReader.h" />
     <ClInclude Include="ClientWriter.h" />
     <ClInclude Include="CMMNotificationClient.h" />
     <ClInclude Include="CMMNotificationClientListener.h" />
     <ClInclude Include="DXAudio.h" />
+    <ClInclude Include="DXAudioResampler.h" />
     <ClInclude Include="QueryInterface.h" />
     <ClInclude Include="CDXAudioStream.h" />
   </ItemGroup>
@@ -89,11 +91,13 @@
     <ClCompile Include="CDXAudioInputStream.cpp" />
     <ClCompile Include="CDXAudioLoopbackStream.cpp" />
     <ClCompile Include="CDXAudioOutputStream.cpp" />
+    <ClCompile Include="CDXAudioResampler.cpp" />
     <ClCompile Include="ClientReader.cpp" />
     <ClCompile Include="ClientWriter.cpp" />
     <ClCompile Include="CMMNotificationClient.cpp" />
     <ClCompile Include="DXAudio.cpp" />
     <ClCompile Include="CDXAudioStream.cpp" />
+    <ClCompile Include="DXAudioResampler.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -13,6 +13,8 @@
     <ClInclude Include="CDXAudioStream.h" />
     <ClInclude Include="ClientWriter.h" />
     <ClInclude Include="ClientReader.h" />
+    <ClInclude Include="DXAudioResampler.h" />
+    <ClInclude Include="CDXAudioResampler.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DXAudio.cpp" />
@@ -25,5 +27,7 @@
     <ClCompile Include="CDXAudioEchoStream.cpp" />
     <ClCompile Include="CDXAudioInputStream.cpp" />
     <ClCompile Include="CDXAudioLoopbackStream.cpp" />
+    <ClCompile Include="DXAudioResampler.cpp" />
+    <ClCompile Include="CDXAudioResampler.cpp" />
   </ItemGroup>
 </Project>
