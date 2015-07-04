@@ -154,6 +154,22 @@ All you have to do to include DXAudio in your project is to download the "DXAudi
 These builds will be kept up-to-date with the source code, so you don't have to build it if you don't want to.  Note that
 only Visual Studio is supported.
 
+DXAudioResampler
+-------------
+DXAudio also exposes an interface for resampling audio to make better use of the code within it.  To use this functionality, include "DXAudioResampler.h" in your application.  The `IDXAudioResampler` interface is simple, having only one method:
+
+    struct IDXAudioResampler : public IUnknown {
+    	virtual VOID STDMETHODCALLTYPE Process (
+    		FLOAT* InBuffer,
+    		UINT InBufferFrames,
+    		FLOAT* OutBuffer,
+    		UINT OutBufferFrames,
+    		DOUBLE Ratio
+    	) PURE;
+    };
+    
+The use of this interface should be self-explanatory for those who have used a resample library before.  If you are unfamiliar, see the repository's wiki.
+
 License
 -------------
 DXAudio is released under the GPLv3 license.
