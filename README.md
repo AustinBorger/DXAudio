@@ -93,8 +93,8 @@ There are three callback interfaces: `IDXAudioReadCallback`, `IDXAudioWriteCallb
 You must implement one of these interfaces.  There are two methods in each interface:
 
     struct IDXAudioWriteCallback : public IDXAudioCallback {
-        void OnObjectFailure(HRESULT hr);
-        void Process(FLOAT SampleRate, FLOAT* OutputBuffer, UINT Frames);
+        VOID OnObjectFailure(LPCWSTR File, UINT Line, HRESULT hr);
+        VOID Process(FLOAT SampleRate, FLOAT* OutputBuffer, UINT Frames);
     };
     
 The above `Process()` method is for a write callback.  The other two callbacks have their own (very similar) versions of this
@@ -102,8 +102,7 @@ method.  Both methods must be implemented by your child class.  As with all COM 
 and `Release()` must also be implemented.
 
 `OnObjectFailure()` is used for reporting that something went wrong.  The HRESULT received will be that which
-was returned by WASAPI on one of its method calls.  It will not let you know that you've used the library incorrectly, it is
-solely for the purpose of dealing with uncertainty in the audio environment.
+was returned by WASAPI on one of its method calls.  It may also let you know that you've used the library correctly - it will provide an `E_INVALIDARG` `HRESULT` in this event.  The method also provides two other parameters: `File`, and `Line`.  These report the line of failure within the DLL source code.  If anything baffling happens, you've found a bug - luckily, it'll be easier to fix with this information in hand.
 
 `Process()` is the heart of the audio stream - it is called once every device period (~10ms).  This is where all
 audio processing should occur.  `Frames` refers to the number of stereo samples to be read or generated per call.
@@ -140,8 +139,8 @@ The stream will automatically be stopped upon release of the COM object.
 The `IDXAudioStream` interface is defined below:
 
     struct IDXAudioStream : public IUnknown {
-    	void Start();
-    	void Stop();
+    	VOID Start();
+    	VOID Stop();
     	FLOAT GetSampleRate();
     	DXAUDIO_STREAM_TYPE GetStreamType();
     };
