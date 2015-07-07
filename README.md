@@ -101,7 +101,7 @@ The above `Process()` method is for a write callback.  The other two callbacks h
 method.  Both methods must be implemented by your child class.  As with all COM interfaces, `QueryInterface()`, `AddRef()`,
 and `Release()` must also be implemented.
 
-`OnObjectFailure()` is used for reporting that something went wrong.  The HRESULT received will be that which
+`OnObjectFailure()` is used for reporting that something went wrong.  The `HRESULT` received will be that which
 was returned by WASAPI on one of its method calls.  It may also let you know that you've used the library correctly - it will provide an `E_INVALIDARG` `HRESULT` in this event.  The method also provides two other parameters: `File`, and `Line`.  These report the line of failure within the DLL source code.  If anything baffling happens, you've found a bug - luckily, it'll be easier to fix with this information in hand.
 
 `Process()` is the heart of the audio stream - it is called once every device period (~10ms).  This is where all
