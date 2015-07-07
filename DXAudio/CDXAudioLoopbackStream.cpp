@@ -23,10 +23,14 @@
 #include "CDXAudioLoopbackStream.h"
 #include <math.h>
 
-#define HANDLE_HR() if (FAILED(HandleHR(hr))) return
+#define FILENAME L"CDXAudioLoopbackStream.cpp"
+#define HANDLE_HR(Line) if (FAILED(HandleHR(Line, hr))) return
+#define HALT_HR() if (FAILED(hr) && hr != AUDCLNT_E_DEVICE_INVALIDATED) { Halt(); return; }
 
 //Zero out all data
 CDXAudioLoopbackStream::CDXAudioLoopbackStream() :
+m_ClientReader(*this),
+m_ClientWriter(*this),
 m_DeviceID(nullptr),
 m_Running(false)
 { }
@@ -45,24 +49,32 @@ CDXAudioLoopbackStream::~CDXAudioLoopbackStream() {
 HRESULT CDXAudioLoopbackStream::Initialize(FLOAT SampleRate, IDXAudioCallback* pDXAudioCallback) {
 	HRESULT hr = S_OK;
 
+	CComPtr<IDXAudioCallback> Callback = pDXAudioCallback;
+
 	//The callback must implement IDXAudioReadCallback
-	hr = pDXAudioCallback->QueryInterface (
+	hr = Callback->QueryInterface (
 		IID_PPV_ARGS(&m_ReadCallback)
 	);
 
-	if (FAILED(hr)) return E_INVALIDARG;
+	if (FAILED(hr)) {
+		Callback->OnObjectFailure (
+			FILENAME,
+			__LINE__,
+			E_INVALIDARG
+		); return E_FAIL;
+	}
 
 	m_SampleRate = SampleRate;
 
 	//Create the thread (done in CDXAudioStream)
-	hr = CDXAudioStream::Initialize();
+	hr = CDXAudioStream::Initialize(Callback);
 
 	if (FAILED(hr)) return E_FAIL;
 
 	return S_OK;
 }
 
-void CDXAudioLoopbackStream::ImplInitialize() {
+VOID CDXAudioLoopbackStream::ImplInitialize() {
 	HRESULT hr = S_OK;
 
 	//Get the default audio output device
@@ -70,12 +82,12 @@ void CDXAudioLoopbackStream::ImplInitialize() {
 		eRender,
 		eConsole,
 		&m_OutputDevice
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Get the id of this device
 	hr = m_OutputDevice->GetId (
 		&m_DeviceID
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Initialize the client reader
 	InitClientReader();
@@ -85,24 +97,20 @@ void CDXAudioLoopbackStream::ImplInitialize() {
 }
 
 //Start the stream(s)
-void CDXAudioLoopbackStream::ImplStart() {
+VOID CDXAudioLoopbackStream::ImplStart() {
 	m_Running = true;
-	HRESULT hr = m_ClientReader.Start();
-	HANDLE_HR();
-	hr = m_ClientWriter.Start();
-	HANDLE_HR();
+	m_ClientReader.Start();
+	m_ClientWriter.Start();
 }
 
 //Stop the stream(s)
-void CDXAudioLoopbackStream::ImplStop() {
+VOID CDXAudioLoopbackStream::ImplStop() {
 	m_Running = false;
-	HRESULT hr = m_ClientReader.Stop();
-	HANDLE_HR();
-	hr = m_ClientWriter.Stop();
-	HANDLE_HR();
+	m_ClientReader.Stop();
+	m_ClientWriter.Stop();
 }
 
-void CDXAudioLoopbackStream::ImplDeviceChange() {
+VOID CDXAudioLoopbackStream::ImplDeviceChange() {
 	HRESULT hr = S_OK;
 	CComPtr<IMMDevice> DefaultDevice;
 	LPWSTR DefaultDeviceID = nullptr;
@@ -112,12 +120,12 @@ void CDXAudioLoopbackStream::ImplDeviceChange() {
 		eRender,
 		eConsole,
 		&DefaultDevice
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Get the id of this device
 	hr = DefaultDevice->GetId (
 		&DefaultDeviceID
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Check to see if the id of the default device is the same as ours
 	if (wcscmp(DefaultDeviceID, m_DeviceID) != 0) {
@@ -139,10 +147,8 @@ void CDXAudioLoopbackStream::ImplDeviceChange() {
 
 		//If the stream was running before, we need to start it up again
 		if (m_Running) {
-			hr = m_ClientReader.Start();
-			HANDLE_HR();
-			hr = m_ClientWriter.Start();
-			HANDLE_HR();
+			m_ClientReader.Start();
+			m_ClientWriter.Start();
 		}
 	}
 
@@ -153,7 +159,7 @@ void CDXAudioLoopbackStream::ImplDeviceChange() {
 	}
 }
 
-void CDXAudioLoopbackStream::ImplPropertyChange() {
+VOID CDXAudioLoopbackStream::ImplPropertyChange() {
 	//This will return AUDCLNT_E_DEVICE_INVALIDATED if we have a stream with outdated properties
 	HRESULT hr = m_ClientWriter.VerifyClient();
 
@@ -164,10 +170,9 @@ void CDXAudioLoopbackStream::ImplPropertyChange() {
 
 		//If the stream was running before, we need to start it up again
 		if (m_Running) {
-			hr = m_ClientWriter.Start();
-			HANDLE_HR();
+			m_ClientWriter.Start();
 		}
-	} else HANDLE_HR();
+	} else HANDLE_HR(__LINE__);
 
 	//This will probably fail too, but it doesn't hurt to check
 	hr = m_ClientReader.VerifyClient();
@@ -179,13 +184,12 @@ void CDXAudioLoopbackStream::ImplPropertyChange() {
 
 		//If the stream was running before, we need to start it up again
 		if (m_Running) {
-			hr = m_ClientReader.Start();
-			HANDLE_HR();
+			m_ClientReader.Start();
 		}
-	} else HANDLE_HR();
+	} else HANDLE_HR(__LINE__);
 }
 
-void CDXAudioLoopbackStream::ImplProcess() {
+VOID CDXAudioLoopbackStream::ImplProcess() {
 	HRESULT hr = S_OK;
 
 	//The number of samples we need to generate corresponds with the application sample rate.
@@ -196,11 +200,11 @@ void CDXAudioLoopbackStream::ImplProcess() {
 	UINT FramesRead = 0;
 
 	//Read the resampled data from the device
-	hr = m_ClientReader.Read (
+	m_ClientReader.Read (
 		InputBuffer,
 		InputBufferSize,
 		FramesRead
-	); HANDLE_HR();
+	);
 
 	//Give the application this data
 	m_ReadCallback->Process (
@@ -214,33 +218,39 @@ void CDXAudioLoopbackStream::ImplProcess() {
 	ZeroMemory(OutputBuffer, sizeof(FLOAT) * 2 * FramesRead);
 
 	//Write this data to the stream
-	hr = m_ClientWriter.Write (
+	m_ClientWriter.Write (
 		OutputBuffer,
 		FramesRead
-	); HANDLE_HR();
+	);
 }
 
 //Initialize the client reader
-void CDXAudioLoopbackStream::InitClientReader() {
+VOID CDXAudioLoopbackStream::InitClientReader() {
+	CComPtr<IDXAudioCallback> Callback = m_ReadCallback;
+
 	HRESULT hr = m_ClientReader.Initialize (
 		true,
 		m_SampleRate,
 		NULL,
-		m_OutputDevice
-	); HANDLE_HR();
+		m_OutputDevice,
+		Callback
+	); HALT_HR();
 }
 
 //Initialize the client writer
-void CDXAudioLoopbackStream::InitClientWriter() {
+VOID CDXAudioLoopbackStream::InitClientWriter() {
+	CComPtr<IDXAudioCallback> Callback = m_ReadCallback;
+
 	HRESULT hr = m_ClientWriter.Initialize (
 		m_SampleRate,
 		GetWaitEvent(),
-		m_OutputDevice
-	); HANDLE_HR();
+		m_OutputDevice,
+		Callback
+	); HALT_HR();
 }
 
 //Handle bad or good HRESULTS
-HRESULT CDXAudioLoopbackStream::HandleHR(HRESULT hr) {
+HRESULT CDXAudioLoopbackStream::HandleHR(UINT Line, HRESULT hr) {
 	if (hr == S_OK) {
 		//Obviously nothing went wrong
 	} else if (hr == AUDCLNT_E_DEVICE_INVALIDATED) {
@@ -248,7 +258,7 @@ HRESULT CDXAudioLoopbackStream::HandleHR(HRESULT hr) {
 		return E_FAIL;
 	} else {
 		//Something bad happened, stop the stream and alert the application
-		m_ReadCallback->OnObjectFailure(hr);
+		m_ReadCallback->OnObjectFailure(FILENAME, Line, hr);
 		Halt();
 		return E_FAIL;
 	}

@@ -147,6 +147,11 @@ HRESULT DXAudioCreateStream (
 	IDXAudioCallback* pDXAudioCallback,
 	IDXAudioStream** ppDXAudioStream
 ) {
+	if (pDesc == nullptr || pDXAudioCallback == nullptr ||
+		ppDXAudioStream == nullptr) {
+		return E_POINTER;
+	}
+
 	switch (pDesc->Type) {
 		case DXAUDIO_STREAM_TYPE_OUTPUT: {
 			return DXAudioCreateOutputStream (

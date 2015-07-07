@@ -23,10 +23,13 @@
 #include "CDXAudioInputStream.h"
 #include <math.h>
 
-#define HANDLE_HR() if (FAILED(HandleHR(hr))) return
+#define FILENAME L"CDXAudioInputStream.cpp"
+#define HANDLE_HR(Line) if (FAILED(HandleHR(Line, hr))) return
+#define HALT_HR() if (FAILED(hr) && hr != AUDCLNT_E_DEVICE_INVALIDATED) { Halt(); return; }
 
 //Zero out all data
 CDXAudioInputStream::CDXAudioInputStream() :
+m_ClientReader(*this),
 m_DeviceID(nullptr),
 m_Running(false)
 { }
@@ -45,24 +48,32 @@ CDXAudioInputStream::~CDXAudioInputStream() {
 HRESULT CDXAudioInputStream::Initialize(FLOAT SampleRate, IDXAudioCallback* pDXAudioCallback) {
 	HRESULT hr = S_OK;
 
+	CComPtr<IDXAudioCallback> Callback = pDXAudioCallback;
+
 	//The callback must implement IDXAudioReadCallback
-	hr = pDXAudioCallback->QueryInterface (
+	hr = Callback->QueryInterface (
 		IID_PPV_ARGS(&m_ReadCallback)
 	);
 
-	if (FAILED(hr)) return E_INVALIDARG;
+	if (FAILED(hr)) {
+		Callback->OnObjectFailure (
+			FILENAME,
+			__LINE__,
+			E_INVALIDARG
+		); return E_FAIL;
+	}
 
 	m_SampleRate = SampleRate;
 
 	//Create the thread (done in CDXAudioStream)
-	hr = CDXAudioStream::Initialize();
+	hr = CDXAudioStream::Initialize(Callback);
 
-	if (FAILED(hr)) return E_FAIL;
+	if (FAILED(hr)) return hr;
 
 	return S_OK;
 }
 
-void CDXAudioInputStream::ImplInitialize() {
+VOID CDXAudioInputStream::ImplInitialize() {
 	HRESULT hr = S_OK;
 
 	//Get the default audio input device
@@ -70,32 +81,30 @@ void CDXAudioInputStream::ImplInitialize() {
 		eCapture,
 		eConsole,
 		&m_InputDevice
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Get the id of this device
 	hr = m_InputDevice->GetId (
 		&m_DeviceID
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Initialize the client reader
 	InitClientReader();
 }
 
 //Start the stream
-void CDXAudioInputStream::ImplStart() {
-	HRESULT hr = m_ClientReader.Start();
+VOID CDXAudioInputStream::ImplStart() {
 	m_Running = true;
-	HANDLE_HR();
+	m_ClientReader.Start();
 }
 
 //Stop the stream
-void CDXAudioInputStream::ImplStop() {
-	HRESULT hr = m_ClientReader.Stop();
+VOID CDXAudioInputStream::ImplStop() {
 	m_Running = false;
-	HANDLE_HR();
+	m_ClientReader.Stop();
 }
 
-void CDXAudioInputStream::ImplDeviceChange() {
+VOID CDXAudioInputStream::ImplDeviceChange() {
 	HRESULT hr = S_OK;
 	CComPtr<IMMDevice> DefaultDevice;
 	LPWSTR DefaultDeviceID = nullptr;
@@ -105,12 +114,12 @@ void CDXAudioInputStream::ImplDeviceChange() {
 		eCapture,
 		eConsole,
 		&DefaultDevice
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Get the id of this device
 	hr = DefaultDevice->GetId (
 		&DefaultDeviceID
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Check to see if the id of the default device is the same as ours
 	if (wcscmp(DefaultDeviceID, m_DeviceID) != 0) {
@@ -128,8 +137,7 @@ void CDXAudioInputStream::ImplDeviceChange() {
 
 		//If the stream was running before, we need to start it up again
 		if (m_Running) {
-			hr = m_ClientReader.Start();
-			HANDLE_HR();
+			m_ClientReader.Start();
 		}
 	}
 
@@ -140,7 +148,7 @@ void CDXAudioInputStream::ImplDeviceChange() {
 	}
 }
 
-void CDXAudioInputStream::ImplPropertyChange() {
+VOID CDXAudioInputStream::ImplPropertyChange() {
 	//This will return AUDCLNT_E_DEVICE_INVALIDATED if we have a stream with outdated properties
 	HRESULT hr = m_ClientReader.VerifyClient();
 
@@ -152,13 +160,12 @@ void CDXAudioInputStream::ImplPropertyChange() {
 
 		//If the stream was running before, we need to start it up again
 		if (m_Running) {
-			hr = m_ClientReader.Start();
-			HANDLE_HR();
+			m_ClientReader.Start();
 		}
-	} else HANDLE_HR();
+	} else HANDLE_HR(__LINE__);
 }
 
-void CDXAudioInputStream::ImplProcess() {
+VOID CDXAudioInputStream::ImplProcess() {
 	HRESULT hr = S_OK;
 
 	//The number of samples we need to generate corresponds with the application sample rate.
@@ -169,11 +176,11 @@ void CDXAudioInputStream::ImplProcess() {
 	UINT FramesRead = 0; //Used to find out how many frames were actually read
 
 	//Read the input data from the stream
-	hr = m_ClientReader.Read (
+	m_ClientReader.Read (
 		InputBuffer,
 		InputBufferSize,
 		FramesRead
-	); HANDLE_HR();
+	);
 
 	//Send that data to the application
 	m_ReadCallback->Process (
@@ -184,17 +191,20 @@ void CDXAudioInputStream::ImplProcess() {
 }
 
 //Initialize the client reader
-void CDXAudioInputStream::InitClientReader() {
+VOID CDXAudioInputStream::InitClientReader() {
+	CComPtr<IDXAudioCallback> Callback = m_ReadCallback;
+
 	HRESULT hr = m_ClientReader.Initialize (
 		false,
 		m_SampleRate,
 		GetWaitEvent(),
-		m_InputDevice
-	); HANDLE_HR();
+		m_InputDevice,
+		Callback
+	); HALT_HR();
 }
 
 //Handle bad or good HRESULTS
-HRESULT CDXAudioInputStream::HandleHR(HRESULT hr) {
+HRESULT CDXAudioInputStream::HandleHR(UINT Line, HRESULT hr) {
 	if (hr == S_OK) {
 		//Obviously nothing went wrong
 	} else if (hr == AUDCLNT_E_DEVICE_INVALIDATED) {
@@ -202,7 +212,7 @@ HRESULT CDXAudioInputStream::HandleHR(HRESULT hr) {
 		return E_FAIL;
 	} else {
 		//Something bad happened, stop the stream and alert the application
-		m_ReadCallback->OnObjectFailure(hr);
+		m_ReadCallback->OnObjectFailure(FILENAME, Line, hr);
 		Halt();
 		return E_FAIL;
 	}

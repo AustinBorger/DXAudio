@@ -26,13 +26,15 @@
 #include <atlbase.h>
 #include <mmdeviceapi.h>
 #include <Audioclient.h>
+#include "DXAudio.h"
 #include "samplerate.h"
+#include "CDXAudioStream.h"
 
 /* ClientReader is used to read stream data from an endpoint.  This can be used
 ** for both an input device or an output device for a loopback stream. */
 class ClientReader {
 public:
-	ClientReader();
+	ClientReader(CDXAudioStream& Stream);
 
 	~ClientReader();
 
@@ -41,21 +43,21 @@ public:
 	** rate to be used by the stream callback.  The endpoint data will automatically be resampled
 	** to this format.  [WaitEvent] is the event handle for the event callback mechanism - if NULL,
 	** there will be no event callback on this end. */
-	HRESULT Initialize(bool IsLoopback, FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMMDevice> InputDevice);
+	HRESULT Initialize(bool IsLoopback, FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMMDevice> InputDevice, CComPtr<IDXAudioCallback> Callback);
 
 	/* This releases all interfaces and dynamically allocated data and sets the object to a pre-initialized state. */
-	void Clean();
+	VOID Clean();
 
 	/* This starts the stream. */
-	HRESULT Start();
+	VOID Start();
 
 	/* This stops the stream. */
-	HRESULT Stop();
+	VOID Stop();
 
 	/* This should be called to read the input data from the stream.  [BufferLength] is the size of the buffer,
 	** which may or may not be the expected number of frames to be generated.  [FramesRead] stores the actual
 	** number of frames read from the input stream. */
-	HRESULT Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead);
+	VOID Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead);
 
 	/* This determines if the client is still in a valid, usable state. */
 	HRESULT VerifyClient();
@@ -77,6 +79,7 @@ public:
 	}
 
 private:
+	CComPtr<IDXAudioCallback> m_Callback; //Used for error reporting
 	CComPtr<IAudioClient> m_Client; //Audio client interface (WASAPI)
 	CComPtr<IAudioCaptureClient> m_CaptureClient; //Capture client interface (WASAPI)
 	WAVEFORMATEXTENSIBLE* m_WaveFormat; //The wave format of the endpoint
@@ -84,4 +87,5 @@ private:
 	SRC_STATE* m_ResampleState; //The resample state (libsamplerate object)
 	UINT32 m_PeriodFrames; //Number of frames in a period
 	REFERENCE_TIME m_Period; //Periodicity of the endpoint
+	CDXAudioStream& m_Stream; //Stream reference
 };

@@ -53,46 +53,46 @@ public:
 		return m_RefCount;
 	}
 
+	/* Calling this will exit the thread gracefully */
+	/* This must be the first thing called in the destructor of the child class, before WaitForThread() */
+	VOID Halt() {
+		SetEvent(m_HaltEvent);
+	}
+
 protected:
 	/* Initializes the thread - must be called by child class in its Initialize() method */
-	HRESULT Initialize();
+	HRESULT Initialize(CComPtr<IDXAudioCallback> Callback);
 
 	/* Returns a handle to the event used for waking the thread each device period */
 	HANDLE GetWaitEvent() {
 		return m_WaitEvent;
 	}
 
-	/* Calling this will exit the thread gracefully */
-	/* This must be the first thing called in the destructor of the child class, before WaitForThread() */
-	void Halt() {
-		SetEvent(m_HaltEvent);
-	}
-
 	/* Calling this will wait for the thread to die */
 	/* This must be the second thing called in the destructor of the child class, after Halt() */
-	void WaitForThread() {
+	VOID WaitForThread() {
 		WaitForSingleObject(m_Thread, INFINITE);
 	}
 
 	//To be implemented
 
 	/* Child class must initialize the stream objects */
-	virtual void ImplInitialize() PURE;
+	virtual VOID ImplInitialize() PURE;
 
 	/* Child class must call Start() on the client */
-	virtual void ImplStart() PURE;
+	virtual VOID ImplStart() PURE;
 	
 	/* Child class must call Stop() on the client */
-	virtual void ImplStop() PURE;
+	virtual VOID ImplStop() PURE;
 
 	/* Child class must check to see if their device is no longer default and re-initialize */
-	virtual void ImplDeviceChange() PURE;
+	virtual VOID ImplDeviceChange() PURE;
 
 	/* Child class must check if their client is invalidated and re-initialize */
-	virtual void ImplPropertyChange() PURE;
+	virtual VOID ImplPropertyChange() PURE;
 
 	/* Child class must read/write stream data and call their callback's process method */
-	virtual void ImplProcess() PURE;
+	virtual VOID ImplProcess() PURE;
 
 	CComPtr<IMMDeviceEnumerator> m_Enumerator; //The WASAPI device enumerator
 	FLOAT m_SampleRate; //The sample rate requested by the application - input/output will be resampled to this
@@ -108,6 +108,8 @@ private:
 	HANDLE m_HaltEvent; //Used for closing the thread/stream
 
 	HANDLE m_Thread; //Handle to the thread (one thread for each stream)
+
+	CComPtr<IDXAudioCallback> m_Callback; //Used for error reporting
 
 	//IUnknown methods
 
@@ -137,12 +139,12 @@ private:
 	//CMMNotificationClientListener methods
 
 	/* Called when the user changes the default device for any data flow or role */
-	virtual void OnDefaultDeviceChanged() final {
+	virtual VOID OnDefaultDeviceChanged() final {
 		SetEvent(m_DeviceChangeEvent);
 	}
 
 	/* Called when the user changes properties such as sample rate on an endpoint */
-	virtual void OnPropertyValueChanged() final {
+	virtual VOID OnPropertyValueChanged() final {
 		SetEvent(m_PropertyChangeEvent);
 	}
 

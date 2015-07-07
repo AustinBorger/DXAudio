@@ -26,13 +26,15 @@
 #include <atlbase.h>
 #include <mmdeviceapi.h>
 #include <Audioclient.h>
+#include "DXAudio.h"
 #include "samplerate.h"
+#include "CDXAudioStream.h"
 
 /* ClientWriter is used to write stream data to an endpoint.  This can only be
 ** used with output endpoints. */
 class ClientWriter {
 public:
-	ClientWriter();
+	ClientWriter(CDXAudioStream& Stream);
 
 	~ClientWriter();
 
@@ -40,20 +42,20 @@ public:
 	** sample rate to be used by the stream callback.  The endpoint data will automatically be resampled
 	** from this format.  [WaitEvent] is the event handle for the event callback mechanism - if NULL,
 	** there will be no event callback on this end. */
-	HRESULT Initialize(FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMMDevice> OutputDevice);
+	HRESULT Initialize(FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMMDevice> OutputDevice, CComPtr<IDXAudioCallback> Callback);
 
 	/* This releases all interfaces and dynamically allocated data and sets the object to a pre-initialized state. */
-	void Clean();
+	VOID Clean();
 
 	/* This starts the stream. */
-	HRESULT Start();
+	VOID Start();
 
 	/* This stops the stream. */
-	HRESULT Stop();
+	VOID Stop();
 
 	/* This should be called to write the output data to the stream.  [BufferLength] is the size of the buffer,
 	** which is the number of frames to be provided. */
-	HRESULT Write(FLOAT* Buffer, UINT BufferLength);
+	VOID Write(FLOAT* Buffer, UINT BufferLength);
 
 	/* This determines if the client is still in a valid, usable state. */
 	HRESULT VerifyClient();
@@ -74,6 +76,7 @@ public:
 	}
 
 private:
+	CComPtr<IDXAudioCallback> m_Callback; //Used for error reporting
 	CComPtr<IAudioClient> m_Client; //Audio client interface (WASAPI)
 	CComPtr<IAudioRenderClient> m_RenderClient; //Render client interface (WASAPI)
 	WAVEFORMATEXTENSIBLE* m_WaveFormat; //The wave format of the endpoint
@@ -81,4 +84,5 @@ private:
 	SRC_STATE* m_ResampleState; //The resample state (libsamplerate object)
 	UINT32 m_PeriodFrames; //Number of frames in a period
 	REFERENCE_TIME m_Period; //Periodicity of the endpoint
+	CDXAudioStream& m_Stream; //Stream reference
 };

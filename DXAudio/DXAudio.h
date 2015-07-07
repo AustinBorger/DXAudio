@@ -67,7 +67,7 @@ struct __declspec(uuid("b19d3575-b174-409c-9a27-1b8bf5d938d4")) IDXAudioCallback
 	/* OnObjectFailure() is a callback mechanism for error reporting.  If something unexpected happens,
 	** or the library is operating out of its expected conditions, then this will be called with the
 	** HRESULT that was provided by the Windows API when the error occurred. Note that this must be implemented. */
-	virtual VOID STDMETHODCALLTYPE OnObjectFailure(HRESULT hr) PURE;
+	virtual VOID STDMETHODCALLTYPE OnObjectFailure(LPCWSTR File, UINT Line, HRESULT hr) PURE;
 };
 
 /* IDXAudioReadCallback is the callback interface for input and loopback streams. */

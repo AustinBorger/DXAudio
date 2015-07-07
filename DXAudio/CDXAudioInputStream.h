@@ -47,24 +47,24 @@ public:
 	//CDXAudioStream methods
 
 	/* Initializes all stream objects and data */
-	void ImplInitialize() final;
+	VOID ImplInitialize() final;
 
 	/* Calls Start() on the client */
-	void ImplStart() final;
+	VOID ImplStart() final;
 
 	/* Calls Stop() on the client */
-	void ImplStop() final;
+	VOID ImplStop() final;
 
 	/* Reacts to a default device change by checking to see if the held device is no longer default,
 	** then re-initializes to the new default device */
-	void ImplDeviceChange() final;
+	VOID ImplDeviceChange() final;
 
 	/* Reacts to a change in an endpoint property value by checking to see if the client is still valid -
 	** if not, the client is re-initialized */
-	void ImplPropertyChange() final;
+	VOID ImplPropertyChange() final;
 
 	/* Reads data from the stream, then calls Process() on the callback object */
-	void ImplProcess() final;
+	VOID ImplProcess() final;
 
 	//New methods
 
@@ -79,9 +79,9 @@ private:
 	bool m_Running; //Indicates whether or not the stream is running (used for routing)
 
 	/* Initializes the client reader object */
-	void InitClientReader();
+	VOID InitClientReader();
 
 	/* Responds to an HRESULT - if there is a failure, it will call the OnObjectFailure() method
 	** on the callback object.  Otherwise, it will return S_OK. */
-	HRESULT HandleHR(HRESULT hr);
+	HRESULT HandleHR(UINT Line, HRESULT hr);
 };

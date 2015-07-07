@@ -74,7 +74,7 @@ int main() {
 
 		DXAUDIO_STREAM_DESC Desc;
 
-		Desc.SampleRate = 44100.0f;
+		Desc.SampleRate = 22050.0f;
 		Desc.Type = Type;
 
 		if (Type == DXAUDIO_STREAM_TYPE_OUTPUT) {

@@ -23,9 +23,12 @@
 #include "ClientReader.h"
 #include <math.h>
 
-#define CHECK_HR() if (FAILED(hr)) return hr
+#define FILENAME L"ClientReader.cpp"
+#define RETURN_HR(Line) if (FAILED(hr)) { if (hr != AUDCLNT_E_DEVICE_INVALIDATED) { m_Callback->OnObjectFailure(FILENAME, Line, hr); return E_FAIL; } else return hr; }
+#define HALT_HR(Line) if (FAILED(hr)) { if (hr != AUDCLNT_E_DEVICE_INVALIDATED) { m_Callback->OnObjectFailure(FILENAME, Line, hr); m_Stream.Halt(); return; } else return; }
 
-ClientReader::ClientReader() :
+ClientReader::ClientReader(CDXAudioStream& Stream) :
+m_Stream(Stream),
 m_ResampleState(nullptr),
 m_WaveFormat(nullptr)
 { }
@@ -44,17 +47,25 @@ ClientReader::~ClientReader() {
 	}
 }
 
-HRESULT ClientReader::Initialize(bool IsLoopback, FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMMDevice> InputDevice) {
+HRESULT ClientReader::Initialize(bool IsLoopback, FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMMDevice> InputDevice, CComPtr<IDXAudioCallback> Callback) {
 	HRESULT hr = S_OK;
 	BYTE* Buffer = nullptr;
 	int error = 0;
+
+	m_Callback = Callback;
 
 	//Create the SRC_STATE object
 	m_ResampleState = src_new (
 		SRC_SINC_FASTEST, //More than adequate for a real time stream
 		2,				  //Two channels (stereo)
 		&error
-	); if (error != 0) return E_FAIL;
+	); if (error != 0) {
+		m_Callback->OnObjectFailure (
+			FILENAME,
+			__LINE__,
+			E_FAIL
+		); return E_FAIL;
+	}
 
 	//"Activate" the device (create the IAudioClient interface)
 	hr = InputDevice->Activate (
@@ -62,21 +73,21 @@ HRESULT ClientReader::Initialize(bool IsLoopback, FLOAT SampleRate, HANDLE WaitE
 		CLSCTX_ALL,
 		nullptr,
 		(void**)(&m_Client)
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//Retrieves the device period - this is how often new information is provided
 	//to the stream, in 100-nanosecond units.
 	hr = m_Client->GetDevicePeriod (
 		&m_Period,
 		nullptr
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//Retrieves the mix format - this is the format in which the audio endpoint gives
 	//us the data.  This data will need to be resampled, so we need to know what form
 	//it's in.
 	hr = m_Client->GetMixFormat (
 		(WAVEFORMATEX**)(&m_WaveFormat)
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//Initialize the client, marking how we're going to be using it
 	hr = m_Client->Initialize (
@@ -87,18 +98,18 @@ HRESULT ClientReader::Initialize(bool IsLoopback, FLOAT SampleRate, HANDLE WaitE
 		m_Period, //Use the endpoint's periodicity (this can't ve any other value)
 		(WAVEFORMATEX*)(m_WaveFormat), //Pass in the wave format we just retrieved
 		NULL //No audio session stuff
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//Create the IAudioCaptureClient interface
 	hr = m_Client->GetService (
 		IID_PPV_ARGS(&m_CaptureClient)
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//If using an event callback mechanism, provide the event handle (this is from CDXAudioStream)
 	if (WaitEvent != NULL) {
 		hr = m_Client->SetEventHandle (
 			WaitEvent
-		); CHECK_HR();
+		); RETURN_HR(__LINE__);
 	}
 
 	//Calculate the number of frames the endpoint is going to give us each period.
@@ -112,7 +123,7 @@ HRESULT ClientReader::Initialize(bool IsLoopback, FLOAT SampleRate, HANDLE WaitE
 	return S_OK;
 }
 
-void ClientReader::Clean() {
+VOID ClientReader::Clean() {
 	//Release all interfaces, free all memory, zero all values...
 	m_CaptureClient.Release();
 	m_Client.Release();
@@ -125,15 +136,19 @@ void ClientReader::Clean() {
 	m_Period = 0;
 }
 
-HRESULT ClientReader::Start() {
-	return m_Client->Start();
+VOID ClientReader::Start() {
+	HRESULT hr = S_OK;
+	hr = m_Client->Start();
+	HALT_HR(__LINE__);
 }
 
-HRESULT ClientReader::Stop() {
-	return m_Client->Stop();
+VOID ClientReader::Stop() {
+	HRESULT hr = S_OK;
+	hr = m_Client->Stop();
+	HALT_HR(__LINE__);
 }
 
-HRESULT ClientReader::Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead) {
+VOID ClientReader::Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead) {
 	HRESULT hr = S_OK;
 	const UINT32 ExcessChannels = m_WaveFormat->Format.nChannels - 2;
 	BYTE* ByteBuffer = nullptr;
@@ -160,9 +175,9 @@ HRESULT ClientReader::Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead) {
 	//a property was changed, in which case GetBuffer will return AUDCLNT_S_BUFFER_EMPTY.
 	//This should not happen in any other situation, as the input device always drives
 	//the wait event, which is only set once every period.
-	if (hr == AUDCLNT_S_BUFFER_EMPTY) {
-		return S_OK;
-	} else CHECK_HR();
+	if (hr != AUDCLNT_S_BUFFER_EMPTY) {
+		HALT_HR(__LINE__);
+	} else return;
 
 	//Convert the byte buffer into a stereo floating-point format and store
 	//in LocalBuffer
@@ -210,7 +225,7 @@ HRESULT ClientReader::Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead) {
 	//We're done using the input data
 	hr = m_CaptureClient->ReleaseBuffer (
 		FramesToRead
-	); CHECK_HR();
+	); HALT_HR(__LINE__);
 
 	ByteBuffer = nullptr;
 
@@ -228,12 +243,16 @@ HRESULT ClientReader::Read(FLOAT* Buffer, UINT BufferLength, UINT& FramesRead) {
 	error = src_process (
 		m_ResampleState,
 		&Data
-	); if (error != 0) return E_FAIL;
+	); if (error != 0) {
+		m_Callback->OnObjectFailure (
+			FILENAME,
+			__LINE__,
+			E_FAIL
+		); m_Stream.Halt(); return;
+	}
 
 	//Let the application developer know how many samples are available
 	FramesRead = Data.output_frames_gen;
-
-	return S_OK;
 }
 
 HRESULT ClientReader::VerifyClient() {

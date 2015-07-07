@@ -23,10 +23,13 @@
 #include "CDXAudioOutputStream.h"
 #include <math.h>
 
-#define HANDLE_HR() if (FAILED(HandleHR(hr))) return
+#define FILENAME L"CDXAudioOutputStream.cpp"
+#define HANDLE_HR(Line) if (FAILED(HandleHR(Line, hr))) return
+#define HALT_HR() if (FAILED(hr) && hr != AUDCLNT_E_DEVICE_INVALIDATED) { Halt(); return; }
 
 //Zero out all data
 CDXAudioOutputStream::CDXAudioOutputStream() :
+m_ClientWriter(*this),
 m_DeviceID(nullptr),
 m_SamplesNeeded(0.0),
 m_Running(false)
@@ -46,24 +49,32 @@ CDXAudioOutputStream::~CDXAudioOutputStream() {
 HRESULT CDXAudioOutputStream::Initialize(FLOAT SampleRate, IDXAudioCallback* pDXAudioCallback) {
 	HRESULT hr = S_OK;
 
+	CComPtr<IDXAudioCallback> Callback = pDXAudioCallback;
+
 	//The callback must implement IDXAudioWriteCallback
-	hr = pDXAudioCallback->QueryInterface (
+	hr = Callback->QueryInterface (
 		IID_PPV_ARGS(&m_WriteCallback)
 	);
 
-	if (FAILED(hr)) return E_INVALIDARG;
+	if (FAILED(hr)) {
+		Callback->OnObjectFailure (
+			FILENAME,
+			__LINE__,
+			E_INVALIDARG
+		); return E_FAIL;
+	}
 
 	m_SampleRate = SampleRate;
 
 	//Create the thread (done in CDXAudioStream)
-	hr = CDXAudioStream::Initialize();
+	hr = CDXAudioStream::Initialize(Callback);
 
-	if (FAILED(hr)) return E_FAIL;
+	if (FAILED(hr)) return hr;
 
 	return S_OK;
 }
 
-void CDXAudioOutputStream::ImplInitialize() {
+VOID CDXAudioOutputStream::ImplInitialize() {
 	HRESULT hr = S_OK;
 
 	//Get the default audio output device
@@ -71,32 +82,30 @@ void CDXAudioOutputStream::ImplInitialize() {
 		eRender,
 		eConsole,
 		&m_OutputDevice
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Get the id of this device
 	hr = m_OutputDevice->GetId (
 		&m_DeviceID
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Initialize the client writer
 	InitClientWriter();
 }
 
 //Start the stream
-void CDXAudioOutputStream::ImplStart() {
+VOID CDXAudioOutputStream::ImplStart() {
 	m_Running = true;
-	HRESULT hr = m_ClientWriter.Start();
-	HANDLE_HR();
+	m_ClientWriter.Start();
 }
 
 //Stop the stream
-void CDXAudioOutputStream::ImplStop() {
+VOID CDXAudioOutputStream::ImplStop() {
 	m_Running = false;
-	HRESULT hr = m_ClientWriter.Stop();
-	HANDLE_HR();
+	m_ClientWriter.Stop();
 }
 
-void CDXAudioOutputStream::ImplDeviceChange() {
+VOID CDXAudioOutputStream::ImplDeviceChange() {
 	HRESULT hr = S_OK;
 	CComPtr<IMMDevice> DefaultDevice;
 	LPWSTR DefaultDeviceID = nullptr;
@@ -106,12 +115,12 @@ void CDXAudioOutputStream::ImplDeviceChange() {
 		eRender,
 		eConsole,
 		&DefaultDevice
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Get the id of this device
 	hr = DefaultDevice->GetId (
 		&DefaultDeviceID
-	); HANDLE_HR();
+	); HANDLE_HR(__LINE__);
 
 	//Check to see if the id of the default device is the same as ours
 	if (wcscmp(DefaultDeviceID, m_DeviceID) != 0) {
@@ -129,8 +138,7 @@ void CDXAudioOutputStream::ImplDeviceChange() {
 
 		//If the stream was running before, we need to start it up again
 		if (m_Running) {
-			hr = m_ClientWriter.Start();
-			HANDLE_HR();
+			m_ClientWriter.Start();
 		}
 
 		//Reset decimal sample counter
@@ -144,7 +152,7 @@ void CDXAudioOutputStream::ImplDeviceChange() {
 	}
 }
 
-void CDXAudioOutputStream::ImplPropertyChange() {
+VOID CDXAudioOutputStream::ImplPropertyChange() {
 	//This will return AUDCLNT_E_DEVICE_INVALIDATED if we have a stream with outdated properties
 	HRESULT hr = m_ClientWriter.VerifyClient();
 
@@ -156,16 +164,15 @@ void CDXAudioOutputStream::ImplPropertyChange() {
 
 		//If the stream was running before, we need to start it up again
 		if (m_Running) {
-			hr = m_ClientWriter.Start();
-			HANDLE_HR();
+			m_ClientWriter.Start();
 		}
 
 		//Reset decimal sample counter
 		m_SamplesNeeded = 0.0;
-	} else HANDLE_HR();
+	} else HANDLE_HR(__LINE__);
 }
 
-void CDXAudioOutputStream::ImplProcess() {
+VOID CDXAudioOutputStream::ImplProcess() {
 	HRESULT hr = S_OK;
 
 	//The number of samples we need to generate corresponds with the application sample rate.
@@ -183,10 +190,10 @@ void CDXAudioOutputStream::ImplProcess() {
 	);
 
 	//Write that output data to the stream
-	hr = m_ClientWriter.Write (
+	m_ClientWriter.Write (
 		OutputBuffer,
 		SamplesGen
-	); HANDLE_HR();
+	);
 
 	//Subtract the integral number of samples from the decimal number of samples.
 	//If there is a remainder > 0.5, it is used in the next period to generate an extra
@@ -198,16 +205,19 @@ void CDXAudioOutputStream::ImplProcess() {
 }
 
 //Initialize the client writer
-void CDXAudioOutputStream::InitClientWriter() {
+VOID CDXAudioOutputStream::InitClientWriter() {
+	CComPtr<IDXAudioCallback> Callback = m_WriteCallback;
+
 	HRESULT hr = m_ClientWriter.Initialize (
 		m_SampleRate,
 		GetWaitEvent(),
-		m_OutputDevice
-	); HANDLE_HR();
+		m_OutputDevice,
+		Callback
+	); HALT_HR();
 }
 
 //Handle bad or good HRESULTS
-HRESULT CDXAudioOutputStream::HandleHR(HRESULT hr) {
+HRESULT CDXAudioOutputStream::HandleHR(UINT Line, HRESULT hr) {
 	if (hr == S_OK) {
 		//Obviously nothing went wrong
 	} else if (hr == AUDCLNT_E_DEVICE_INVALIDATED) {
@@ -215,7 +225,7 @@ HRESULT CDXAudioOutputStream::HandleHR(HRESULT hr) {
 		return E_FAIL;
 	} else {
 		//Something bad happened, stop the stream and alert the application
-		m_WriteCallback->OnObjectFailure(hr);
+		m_WriteCallback->OnObjectFailure(FILENAME, Line, hr);
 		Halt();
 		return E_FAIL;
 	}

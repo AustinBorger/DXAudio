@@ -27,6 +27,7 @@
 #include "DXAudio.h"
 #include "QueryInterface.h"
 #include <iostream>
+#include <string>
 #include <math.h>
 
 class Read : public IDXAudioReadCallback {
@@ -50,10 +51,17 @@ public:
 		return --m_RefCount;
 	}
 
-	VOID STDMETHODCALLTYPE OnObjectFailure(HRESULT hr) final {
+	VOID STDMETHODCALLTYPE OnObjectFailure(LPCWSTR File, UINT Line, HRESULT hr) final {
 		_com_error e(hr);
+		std::wstring Message;
 
-		MessageBoxW(NULL, e.ErrorMessage(), L"Object Failure", MB_ICONERROR | MB_OK);
+		Message.append(File);
+		Message.append(L" @ Line ");
+		Message.append(std::to_wstring(Line));
+		Message.append(L":\n\n");
+		Message.append(e.ErrorMessage());
+
+		MessageBoxW(NULL, Message.c_str(), L"Object Failure", MB_ICONERROR | MB_OK);
 
 		ExitProcess(hr);
 	}

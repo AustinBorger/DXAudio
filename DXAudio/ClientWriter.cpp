@@ -23,9 +23,12 @@
 #include "ClientWriter.h"
 #include <math.h>
 
-#define CHECK_HR() if (FAILED(hr)) return hr
+#define FILENAME L"ClientWriter.cpp"
+#define RETURN_HR(Line) if (FAILED(hr)) { if (hr != AUDCLNT_E_DEVICE_INVALIDATED) { m_Callback->OnObjectFailure(FILENAME, Line, hr); return E_FAIL; } else return hr; }
+#define HALT_HR(Line) if (FAILED(hr)) { if (hr != AUDCLNT_E_DEVICE_INVALIDATED) { m_Callback->OnObjectFailure(FILENAME, Line, hr); m_Stream.Halt(); return; } else return; }
 
-ClientWriter::ClientWriter() :
+ClientWriter::ClientWriter(CDXAudioStream& Stream) :
+m_Stream(Stream),
 m_ResampleState(nullptr),
 m_WaveFormat(nullptr)
 { }
@@ -44,17 +47,25 @@ ClientWriter::~ClientWriter() {
 	}
 }
 
-HRESULT ClientWriter::Initialize(FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMMDevice> OutputDevice) {
+HRESULT ClientWriter::Initialize(FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMMDevice> OutputDevice, CComPtr<IDXAudioCallback> Callback) {
 	HRESULT hr = S_OK;
 	BYTE* Buffer = nullptr;
 	int error = 0;
+
+	m_Callback = Callback;
 
 	//Create the SRC_STATE object
 	m_ResampleState = src_new (
 		SRC_SINC_FASTEST, //More than adequate for a real time stream
 		2,				  //Two channels (stereo)
 		&error
-	); if (error != 0) return E_FAIL;
+	); if (error != 0) {
+		m_Callback->OnObjectFailure (
+			FILENAME,
+			__LINE__,
+			E_FAIL
+		); return E_FAIL;
+	}
 
 	//"Activate" the device (create the IAudioClient interface)
 	hr = OutputDevice->Activate (
@@ -62,20 +73,20 @@ HRESULT ClientWriter::Initialize(FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMM
 		CLSCTX_ALL,
 		nullptr,
 		(void**)(&m_Client)
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//Retrieves the device period - this is how often we need to provide new information
 	//to the stream, in 100-nanosecond units.
 	hr = m_Client->GetDevicePeriod (
 		&m_Period,
 		nullptr
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//Retrieves the mix format - this is the format in which we must deliver the audio data
 	//to the endpoint.
 	hr = m_Client->GetMixFormat (
 		(WAVEFORMATEX**)(&m_WaveFormat)
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//Initialize the client, marking how we're going to be using it
 	hr = m_Client->Initialize (
@@ -85,18 +96,18 @@ HRESULT ClientWriter::Initialize(FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMM
 		m_Period, //Use the endpoint's periodicity (this can't ve any other value)
 		(WAVEFORMATEX*)(m_WaveFormat), //Pass in the wave format we just retrieved
 		NULL //No audio session stuff
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//Create the IAudioRenderClient interface
 	hr = m_Client->GetService (
 		IID_PPV_ARGS(&m_RenderClient)
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//If using an event callback mechanism, provide the event handle (this is from CDXAudioStream)
 	if (WaitEvent != NULL) {
 		hr = m_Client->SetEventHandle (
 			WaitEvent
-		); CHECK_HR();
+		); RETURN_HR(__LINE__);
 	}
 
 	//Calculate the number of frames the endpoint is going to need from us each period.
@@ -109,13 +120,13 @@ HRESULT ClientWriter::Initialize(FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMM
 	hr = m_RenderClient->GetBuffer (
 		m_PeriodFrames * 2,
 		&Buffer
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//ReleaseBuffer() has to be called to unlock the buffer resource for the audio engine to use.
 	hr = m_RenderClient->ReleaseBuffer (
 		m_PeriodFrames * 2,
 		AUDCLNT_BUFFERFLAGS_SILENT
-	); CHECK_HR();
+	); RETURN_HR(__LINE__);
 
 	//Calculate the resample ratio - this is the ratio of the output sample rate to the input sample rate, IE
 	//the sample rate specified used by the endpoint divided by that which is specified by the application developer.
@@ -125,7 +136,7 @@ HRESULT ClientWriter::Initialize(FLOAT SampleRate, HANDLE WaitEvent, CComPtr<IMM
 	return S_OK;
 }
 
-void ClientWriter::Clean() {
+VOID ClientWriter::Clean() {
 	//Release all interfaces, free all memory, zero all values...
 	m_RenderClient.Release();
 	m_Client.Release();
@@ -138,21 +149,29 @@ void ClientWriter::Clean() {
 	m_Period = 0;
 }
 
-HRESULT ClientWriter::Start() {
-	return m_Client->Start();
+VOID ClientWriter::Start() {
+	HRESULT hr = S_OK;
+	hr = m_Client->Start();
+	HALT_HR(__LINE__);
 }
 
-HRESULT ClientWriter::Stop() {
-	return m_Client->Stop();
+VOID ClientWriter::Stop() {
+	HRESULT hr = S_OK;
+	hr = m_Client->Stop();
+	HALT_HR(__LINE__);
 }
 
-HRESULT ClientWriter::Write(FLOAT* Buffer, UINT BufferLength) {
+VOID ClientWriter::Write(FLOAT* Buffer, UINT BufferLength) {
 	HRESULT hr = S_OK;
 	UINT32 ExcessChannels = m_WaveFormat->Format.nChannels - 2;
 	BYTE* ByteBuffer = nullptr;
 
 	//_alloca is safe here, as this is not recursive and only takes up a few KB at most
-	const UINT LocalBufferSize = (UINT)(ceil(m_PeriodFrames * m_ResampleRatio));
+	//The size of the local buffer needs to be larger than just its period frames in the
+	//case that the periodicity of the input device on a duplex stream is greater than
+	//the periodicity of the output device.  Multiplying its period frames by 1.5
+	//provides for adequate uncertainty.
+	const UINT LocalBufferSize = (UINT)(m_PeriodFrames * 1.5);
 	FLOAT* LocalBuffer = (FLOAT*)(_alloca(sizeof(FLOAT) * 2 * LocalBufferSize));
 	FLOAT* LocalBufferIndex = LocalBuffer;
 	SRC_DATA Data;
@@ -174,7 +193,13 @@ HRESULT ClientWriter::Write(FLOAT* Buffer, UINT BufferLength) {
 	error = src_process (
 		m_ResampleState,
 		&Data
-	); if (error != 0) return E_FAIL;
+	); if (error != 0) {
+		m_Callback->OnObjectFailure (
+			FILENAME,
+			__LINE__,
+			E_FAIL
+		); m_Stream.Halt(); return;
+	}
 
 	//Lock the buffer resource
 	hr = m_RenderClient->GetBuffer (
@@ -182,19 +207,15 @@ HRESULT ClientWriter::Write(FLOAT* Buffer, UINT BufferLength) {
 		&ByteBuffer
 	);
 
-	if (FAILED(hr)) {
-		//If GetBuffer() returns AUDCLNT_E_BUFFER_TOO_LARGE, this is because
-		//the endpoint is in the middle of switching properties, but hasn't
-		//notified us of the change just yet.  Until then, the stream remains
-		//in a stopped state, but may still call our event (or, if a duplex stream,
-		//the input device will be the one calling the event, basically pushing
-		//the stream data into a brick wall).  In this case, just skip this frame.
-		if (hr == AUDCLNT_E_BUFFER_TOO_LARGE) {
-			return S_OK;
-		} else {
-			return hr;
-		}
-	}
+	//If GetBuffer() returns AUDCLNT_E_BUFFER_TOO_LARGE, this is because
+	//the endpoint is in the middle of switching properties, but hasn't
+	//notified us of the change just yet.  Until then, the stream remains
+	//in a stopped state, but may still call our event (or, if a duplex stream,
+	//the input device will be the one calling the event, basically pushing
+	//the stream data into a brick wall).  In this case, just skip this frame.
+	if (hr != AUDCLNT_E_BUFFER_TOO_LARGE) {
+		HALT_HR(__LINE__);
+	} else return;
 
 	//Convert the local buffer into the endpoint format and store it
 	//in the buffer resource
@@ -251,9 +272,7 @@ HRESULT ClientWriter::Write(FLOAT* Buffer, UINT BufferLength) {
 	hr = m_RenderClient->ReleaseBuffer (
 		Data.output_frames_gen,
 		NULL
-	); CHECK_HR();
-
-	return S_OK;
+	); HALT_HR(__LINE__);
 }
 
 HRESULT ClientWriter::VerifyClient() {

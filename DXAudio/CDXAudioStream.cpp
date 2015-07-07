@@ -23,9 +23,10 @@
 #include "CDXAudioStream.h"
 #include "CMMNotificationClient.h"
 
-#define EVENT_INIT(x) x = CreateEventW(NULL, FALSE, FALSE, NULL); if (x == NULL) { return HRESULT_FROM_WIN32(GetLastError()); }
+#define FILENAME L"CDXAudioStream.cpp"
+#define EVENT_INIT(x, Line) x = CreateEventW(NULL, FALSE, FALSE, NULL); if (x == NULL) { m_Callback->OnObjectFailure(FILENAME, Line, HRESULT_FROM_WIN32(GetLastError())); return E_FAIL; }
 #define EVENT_CLEANUP(x) if (x != NULL) { CloseHandle(x); x = NULL; }
-#define CHECK_HR() if (FAILED(hr)) return hr
+#define CHECK_HR(Line) if (FAILED(hr)) { m_Callback->OnObjectFailure(L"CDXAudioStream.cpp", Line, hr); return hr; }
 
 CDXAudioStream::CDXAudioStream() :
 m_RefCount(1),
@@ -54,13 +55,15 @@ CDXAudioStream::~CDXAudioStream() {
 	EVENT_CLEANUP(m_HaltEvent);
 }
 
-HRESULT CDXAudioStream::Initialize() {
-	EVENT_INIT(m_StartEvent);
-	EVENT_INIT(m_StopEvent);
-	EVENT_INIT(m_DeviceChangeEvent);
-	EVENT_INIT(m_PropertyChangeEvent);
-	EVENT_INIT(m_WaitEvent);
-	EVENT_INIT(m_HaltEvent);
+HRESULT CDXAudioStream::Initialize(CComPtr<IDXAudioCallback> Callback) {
+	m_Callback = Callback;
+
+	EVENT_INIT(m_StartEvent, __LINE__);
+	EVENT_INIT(m_StopEvent, __LINE__);
+	EVENT_INIT(m_DeviceChangeEvent, __LINE__);
+	EVENT_INIT(m_PropertyChangeEvent, __LINE__);
+	EVENT_INIT(m_WaitEvent, __LINE__);
+	EVENT_INIT(m_HaltEvent, __LINE__);
 
 	//Everything will happen on a separate thread
 	m_Thread = CreateThread (
@@ -74,7 +77,11 @@ HRESULT CDXAudioStream::Initialize() {
 
 	//If m_Thread is NULL, an error occurred
 	if (m_Thread == NULL) {
-		return HRESULT_FROM_WIN32(GetLastError());
+		m_Callback->OnObjectFailure (
+			FILENAME,
+			__LINE__,
+			HRESULT_FROM_WIN32(GetLastError())
+		); return E_FAIL;
 	}
 
 	return S_OK;
@@ -115,7 +122,7 @@ DWORD CDXAudioStream::StreamThreadEntry() {
 		NULL,
 		COINIT_SPEED_OVER_MEMORY |
 		COINIT_APARTMENTTHREADED
-	); CHECK_HR();
+	); CHECK_HR(__LINE__);
 
 	//Create the device enumerator
 	hr = CoCreateInstance (
@@ -124,14 +131,14 @@ DWORD CDXAudioStream::StreamThreadEntry() {
 		CLSCTX_ALL,
 		__uuidof(IMMDeviceEnumerator),
 		(void**)(&m_Enumerator)
-	); CHECK_HR();
+	); CHECK_HR(__LINE__);
 
 	CMMNotificationClient NotificationClient(*this);
 
 	//Register the callback for default device / property changes
 	hr = m_Enumerator->RegisterEndpointNotificationCallback (
 		&NotificationClient
-	); CHECK_HR();
+	); CHECK_HR(__LINE__);
 
 	//Initialize the child object
 	ImplInitialize();
