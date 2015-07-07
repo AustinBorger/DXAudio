@@ -40,8 +40,10 @@ public:
 	VOID STDMETHODCALLTYPE Process (
 		FLOAT* InBuffer,
 		UINT InBufferFrames,
+		UINT* pInBufferFramesUsed,
 		FLOAT* OutBuffer,
 		UINT OutBufferFrames,
+		UINT* pOutBufferFramesGen,
 		DOUBLE Ratio
 	) final;
 

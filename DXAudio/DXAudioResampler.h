@@ -13,8 +13,10 @@ struct __declspec(uuid("4170135b-1f5b-4a32-9e22-08de2626b5f7")) IDXAudioResample
 	virtual VOID STDMETHODCALLTYPE Process (
 		FLOAT* InBuffer,
 		UINT InBufferFrames,
+		UINT* pInBufferFramesUsed,
 		FLOAT* OutBuffer,
 		UINT OutBufferFrames,
+		UINT* pOutBufferFramesGen,
 		DOUBLE Ratio
 	) PURE;
 };

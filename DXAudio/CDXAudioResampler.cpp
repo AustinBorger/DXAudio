@@ -31,8 +31,10 @@ HRESULT CDXAudioResampler::Initialize() {
 VOID CDXAudioResampler::Process (
 	FLOAT* InBuffer,
 	UINT InBufferFrames,
+	UINT* pInBufferFramesUsed,
 	FLOAT* OutBuffer,
 	UINT OutBufferFrames,
+	UINT* pOutBufferFramesGen,
 	DOUBLE Ratio
 ) {
 	int error = 0;
@@ -48,4 +50,7 @@ VOID CDXAudioResampler::Process (
 	SrcData.src_ratio = Ratio;
 
 	error = src_process(m_SrcState, &SrcData);
+
+	*pInBufferFramesUsed = SrcData.input_frames_used;
+	*pOutBufferFramesGen = SrcData.output_frames_gen;
 }
