@@ -109,11 +109,11 @@ audio processing should occur.  `Frames` refers to the number of stereo samples 
 This number is highly likely to change between calls, so you should not write your application to rely on a certain
 buffer size.  This is primarily due to the fact that device periodicity is out of my hands, and constraining processing
 to a constant buffer size would introduce additional latency.  This number also depends on the discrepancy between the
-application's requested sample rate and that of the endpoint.
+application's requested sample rate and that of the endpoint.  The format of the buffers is interleaved, meaning every two float values represents a pair of left and right channel samples, such that a sample at position `[i * 2]` is a left channel sample, and a sample at `[i * 2 + 1]` is a right channel sample.
 
 Note that you should not call stream interface methods from within `Process()`,
-as it occurs on a separate thread and the `IDXAudioStream` interface is not thread-safe.  COM is initialized in
-apartment-threaded mode, and nothing is done within DXAudio to prevent race conditions on behalf of the application.
+as this method is called on a separate thread - `IDXAudioStream` is not thread-safe.  COM is initialized in
+apartment-threaded mode on the stream thread, and nothing is done within DXAudio to prevent race conditions on behalf of the application.
 
 #### 3. Create the stream
 
@@ -161,13 +161,15 @@ DXAudio also exposes an interface for resampling audio to make better use of the
     	virtual VOID STDMETHODCALLTYPE Process (
     		FLOAT* InBuffer,
     		UINT InBufferFrames,
+    		UINT* pInBufferFramesUsed,
     		FLOAT* OutBuffer,
     		UINT OutBufferFrames,
+    		UINT* pOutBufferFramesGen,
     		DOUBLE Ratio
     	) PURE;
     };
     
-The use of this interface should be self-explanatory for those who have used a resample library before.  If you are unfamiliar, see the repository's wiki.
+`InBuffer` and `OutBuffer` are pointers to the input and output audio buffers, respectively, which the application must supply.  The buffer format is the same as used in the `Process()` method.  `InBufferFrames` and `OutBufferFrames` are the number of stereo samples in the input and output buffers, respectively.  They are not necessarily the number of samples that will be used or generated.  `pInBufferFramesUsed` and `pOutBufferFramesGen` are used to determine the amount of data that was used and generated - these must not be `NULL`, otherwise a `nullptr` exception may occur.  Finally, `Ratio` is the ratio of the output sample rate to the input sample rate.  This cannot be greater than 256.
 
 License
 -------------
