@@ -94,24 +94,28 @@ You must implement one of these interfaces.  There are two methods in each inter
 
     struct IDXAudioWriteCallback : public IDXAudioCallback {
         VOID OnObjectFailure(LPCWSTR File, UINT Line, HRESULT hr);
-        VOID Process(FLOAT SampleRate, FLOAT* OutputBuffer, UINT Frames);
+        VOID OnThreadInit();
+        VOID OnProcess(FLOAT SampleRate, FLOAT* OutputBuffer, UINT Frames);
     };
     
-The above `Process()` method is for a write callback.  The other two callbacks have their own (very similar) versions of this
-method.  Both methods must be implemented by your child class.  As with all COM interfaces, `QueryInterface()`, `AddRef()`,
-and `Release()` must also be implemented.
+The above `OnProcess()` method is for a write callback.  The other two callbacks have their own (very similar) versions of this method.  Both methods must be implemented by your child class.  As with all COM interfaces, `QueryInterface()`, `AddRef()`, and `Release()` must also be implemented.
+
+`OnThreadInit()` is called when the stream thread is first created.  Since COM is initialized in apartment threaded mode
+on the stream thread, any COM objects you wish to use must be initialized in this method with references kept in your
+callback implementation or any of the objects associated with it.  This is also useful for initializing any audio
+rendering stuff before `OnProcess()` is first called.
 
 `OnObjectFailure()` is used for reporting that something went wrong.  The `HRESULT` received will be that which
 was returned by WASAPI on one of its method calls.  It may also let you know that you've used the library correctly - it will provide an `E_INVALIDARG` `HRESULT` in this event.  The method also provides two other parameters: `File`, and `Line`.  These report the line of failure within the DLL source code.  If anything baffling happens, you've found a bug - luckily, it'll be easier to fix with this information in hand.
 
-`Process()` is the heart of the audio stream - it is called once every device period (~10ms).  This is where all
+`OnProcess()` is the heart of the audio stream - it is called once every device period (~10ms).  This is where all
 audio processing should occur.  `Frames` refers to the number of stereo samples to be read or generated per call.
 This number is highly likely to change between calls, so you should not write your application to rely on a certain
 buffer size.  This is primarily due to the fact that device periodicity is out of my hands, and constraining processing
 to a constant buffer size would introduce additional latency.  This number also depends on the discrepancy between the
 application's requested sample rate and that of the endpoint.  The format of the buffers is interleaved, meaning every two float values represents a pair of left and right channel samples, such that a sample at position `[i * 2]` is a left channel sample, and a sample at `[i * 2 + 1]` is a right channel sample.
 
-Note that you should not call stream interface methods from within `Process()`,
+Note that you should not call stream interface methods from within `OnProcess()`,
 as this method is called on a separate thread - `IDXAudioStream` is not thread-safe.  COM is initialized in
 apartment-threaded mode on the stream thread, and nothing is done within DXAudio to prevent race conditions on behalf of the application.
 
@@ -169,7 +173,7 @@ DXAudio also exposes an interface for resampling audio to make better use of the
     	) PURE;
     };
     
-`InBuffer` and `OutBuffer` are pointers to the input and output audio buffers, respectively, which the application must supply.  The buffer format is the same as used in the `Process()` method.  `InBufferFrames` and `OutBufferFrames` are the number of stereo samples in the input and output buffers, respectively.  They are not necessarily the number of samples that will be used or generated.  `pInBufferFramesUsed` and `pOutBufferFramesGen` are used to determine the amount of data that was used and generated - these must not be `NULL`, otherwise a `nullptr` exception may occur.  Finally, `Ratio` is the ratio of the output sample rate to the input sample rate.  This cannot be greater than 256.
+`InBuffer` and `OutBuffer` are pointers to the input and output audio buffers, respectively, which the application must supply.  The buffer format is the same as used in the `OnProcess()` method.  `InBufferFrames` and `OutBufferFrames` are the number of stereo samples in the input and output buffers, respectively.  They are not necessarily the number of samples that will be used or generated.  `pInBufferFramesUsed` and `pOutBufferFramesGen` are used to determine the amount of data that was used and generated - these must not be `NULL`, otherwise a `nullptr` exception may occur.  Finally, `Ratio` is the ratio of the output sample rate to the input sample rate.  This cannot be greater than 256.
 
 License
 -------------
