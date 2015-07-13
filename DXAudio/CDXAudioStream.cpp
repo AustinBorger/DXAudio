@@ -124,6 +124,8 @@ DWORD CDXAudioStream::StreamThreadEntry() {
 		COINIT_APARTMENTTHREADED
 	); CHECK_HR(__LINE__);
 
+	m_Callback->OnThreadInit();
+
 	//Create the device enumerator
 	hr = CoCreateInstance (
 		__uuidof(MMDeviceEnumerator),

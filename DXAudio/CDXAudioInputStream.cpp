@@ -183,7 +183,7 @@ VOID CDXAudioInputStream::ImplProcess() {
 	);
 
 	//Send that data to the application
-	m_ReadCallback->Process (
+	m_ReadCallback->OnProcess (
 		m_SampleRate,
 		InputBuffer,
 		FramesRead

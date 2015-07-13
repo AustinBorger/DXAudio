@@ -29,7 +29,7 @@
 #include <string>
 #include <math.h>
 
-class Write : public IDXAudioWriteCallback {
+class Write : public CDXAudioWriteCallback {
 public:
 	Write() : m_RefCount(1), pos(0.0F) { }
 
@@ -65,7 +65,7 @@ public:
 		ExitProcess(hr);
 	}
 
-	VOID STDMETHODCALLTYPE Process(FLOAT SampleRate, FLOAT* OutputBuffer, UINT BufferFrames) final {
+	VOID STDMETHODCALLTYPE OnProcess(FLOAT SampleRate, FLOAT* OutputBuffer, UINT BufferFrames) final {
 		for (UINT i = 0; i < BufferFrames; i++) {
 			OutputBuffer[i * 2] = 0.3F * sin(pos);
 			OutputBuffer[i * 2 + 1] = OutputBuffer[i * 2];

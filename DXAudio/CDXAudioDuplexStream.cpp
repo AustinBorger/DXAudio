@@ -265,7 +265,7 @@ VOID CDXAudioDuplexStream::ImplProcess() {
 	FLOAT* OutputBuffer = (FLOAT*)(_alloca(sizeof(FLOAT) * 2 * FramesRead));
 
 	//Give the application the input data and tell it to generate output
-	m_ReadWriteCallback->Process (
+	m_ReadWriteCallback->OnProcess (
 		m_SampleRate,
 		InputBuffer,
 		OutputBuffer,

@@ -30,7 +30,7 @@
 #include <string>
 #include <math.h>
 
-class ReadWrite : public IDXAudioReadWriteCallback {
+class ReadWrite : public CDXAudioReadWriteCallback {
 public:
 	ReadWrite() : m_RefCount(1), pos(0.0F) { }
 
@@ -66,7 +66,7 @@ public:
 		ExitProcess(hr);
 	}
 
-	VOID STDMETHODCALLTYPE Process(FLOAT SampleRate, FLOAT* InputBuffer, FLOAT* OutputBuffer, UINT BufferFrames) final {
+	VOID STDMETHODCALLTYPE OnProcess(FLOAT SampleRate, FLOAT* InputBuffer, FLOAT* OutputBuffer, UINT BufferFrames) final {
 		FLOAT RMS = 0.0F;
 
 		for (UINT i = 0; i < BufferFrames; i++) {

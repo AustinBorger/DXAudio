@@ -207,7 +207,7 @@ VOID CDXAudioLoopbackStream::ImplProcess() {
 	);
 
 	//Give the application this data
-	m_ReadCallback->Process (
+	m_ReadCallback->OnProcess (
 		m_SampleRate,
 		InputBuffer,
 		FramesRead

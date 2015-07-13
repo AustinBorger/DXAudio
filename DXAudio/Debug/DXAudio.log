@@ -1,11 +1,19 @@
-﻿Build started 7/7/2015 3:23:41 PM.
+﻿Build started 7/13/2015 2:42:07 PM.
      1>Project "C:\Users\Austin\Documents\COM Objects\DXAudio\DXAudio\DXAudio.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I../Include/ /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _DXAUDIO_DLL_PROJECT /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt CDXAudioResampler.cpp DXAudioResampler.cpp
-         CDXAudioResampler.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I../Include/ /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _DXAUDIO_DLL_PROJECT /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt CDXAudioDuplexStream.cpp CDXAudioEchoStream.cpp CDXAudioInputStream.cpp CDXAudioLoopbackStream.cpp CDXAudioOutputStream.cpp CDXAudioStream.cpp CMMNotificationClient.cpp ClientReader.cpp ClientWriter.cpp DXAudio.cpp
+         CDXAudioStream.cpp
+         CDXAudioOutputStream.cpp
+         CDXAudioLoopbackStream.cpp
+         CDXAudioInputStream.cpp
+         CDXAudioEchoStream.cpp
+         CDXAudioDuplexStream.cpp
          Generating Code...
          Compiling...
-         DXAudioResampler.cpp
+         DXAudio.cpp
+         ClientWriter.cpp
+         ClientReader.cpp
+         CMMNotificationClient.cpp
          Generating Code...
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.dll" /INCREMENTAL /NOLOGO /LIBPATH:../Lib/Debug/ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.lib" /MACHINE:X86 /DLL Debug\CDXAudioDuplexStream.obj
@@ -20,9 +28,11 @@
          Debug\DXAudio.obj
          Debug\CDXAudioStream.obj
          Debug\DXAudioResampler.obj
+         LINK : C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.dll not found or not built by the last incremental link; performing full link
+            Creating library C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.lib and object C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.exp
          DXAudio.vcxproj -> C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.dll
      1>Done Building Project "C:\Users\Austin\Documents\COM Objects\DXAudio\DXAudio\DXAudio.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.98
+Time Elapsed 00:00:08.03

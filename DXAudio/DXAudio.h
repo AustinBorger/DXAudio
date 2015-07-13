@@ -68,6 +68,11 @@ struct __declspec(uuid("b19d3575-b174-409c-9a27-1b8bf5d938d4")) IDXAudioCallback
 	** or the library is operating out of its expected conditions, then this will be called with the
 	** HRESULT that was provided by the Windows API when the error occurred. Note that this must be implemented. */
 	virtual VOID STDMETHODCALLTYPE OnObjectFailure(LPCWSTR File, UINT Line, HRESULT hr) PURE;
+
+	/* OnThreadInit() is called when the stream is first created, on the new thread.  Because COM is initialized
+	** to apartment threaded mode, if you wish to use any COM objects you must create them here.  This is also
+	** useful for any general initialization that must be done with your audio rendering code. */
+	virtual VOID STDMETHODCALLTYPE OnThreadInit() PURE;
 };
 
 /* IDXAudioReadCallback is the callback interface for input and loopback streams. */
@@ -77,8 +82,17 @@ struct __declspec(uuid("63366a5b-5a66-43bf-8d3b-36421d4036d3")) IDXAudioReadCall
 	** available in the [AudioIn] buffer.  Note that this value is likely to frequently change between calls due to
 	** the process of resampling the input.  You should write your application to be flexible of this number.
 	** Note that this must be implemented. */
-	virtual VOID STDMETHODCALLTYPE Process(FLOAT SampleRate, FLOAT* AudioIn, UINT Frames) PURE;
+	virtual VOID STDMETHODCALLTYPE OnProcess(FLOAT SampleRate, FLOAT* AudioIn, UINT Frames) PURE;
 };
+
+#ifndef _DXAUDIO_DLL_PROJECT
+
+class CDXAudioReadCallback abstract : public IDXAudioReadCallback {
+public:
+	virtual VOID STDMETHODCALLTYPE OnThreadInit() { }
+};
+
+#endif
 
 /* IDXAudioWriteCallback is the callback interface for output streams. */
 struct __declspec(uuid("34ae23e3-6e51-4c41-86dd-37d0461ac6ae")) IDXAudioWriteCallback : public IDXAudioCallback {
@@ -87,8 +101,17 @@ struct __declspec(uuid("34ae23e3-6e51-4c41-86dd-37d0461ac6ae")) IDXAudioWriteCal
 	** to the [AudioOut] buffer.  Note that this value is likely to frequently change between calls due to
 	** the process of resampling the output.  You should write your application to be flexible of this number.
 	** Note that this must be implemented. */
-	virtual VOID STDMETHODCALLTYPE Process(FLOAT SampleRate, FLOAT* AudioOut, UINT Frames) PURE;
+	virtual VOID STDMETHODCALLTYPE OnProcess(FLOAT SampleRate, FLOAT* AudioOut, UINT Frames) PURE;
 };
+
+#ifndef _DXAUDIO_DLL_PROJECT
+
+class CDXAudioWriteCallback abstract : public IDXAudioWriteCallback {
+public:
+	virtual VOID STDMETHODCALLTYPE OnThreadInit() { }
+};
+
+#endif
 
 /* IDXAudioReadWriteCallback is the callback interface for duplex and echo streams. */
 struct __declspec(uuid("857d0781-1b48-4494-b829-24f3b731ff6b")) IDXAudioReadWriteCallback : public IDXAudioCallback {
@@ -99,8 +122,17 @@ struct __declspec(uuid("857d0781-1b48-4494-b829-24f3b731ff6b")) IDXAudioReadWrit
 	** Note that this value is likely to frequently change between calls due to the process of resampling.
 	** You should write your application to be flexible of this number.
 	** Note that this must be implemented. */
-	virtual VOID STDMETHODCALLTYPE Process(FLOAT SampleRate, FLOAT* AudioIn, FLOAT* AudioOut, UINT Frames) PURE;
+	virtual VOID STDMETHODCALLTYPE OnProcess(FLOAT SampleRate, FLOAT* AudioIn, FLOAT* AudioOut, UINT Frames) PURE;
 };
+
+#ifndef _DXAUDIO_DLL_PROJECT
+
+class CDXAudioReadWriteCallback abstract : public IDXAudioReadWriteCallback {
+public:
+	virtual VOID STDMETHODCALLTYPE OnThreadInit() { }
+};
+
+#endif
 
 #ifndef _DXAUDIO_EXPORT_TAG
 	#ifdef _DXAUDIO_DLL_PROJECT

@@ -183,7 +183,7 @@ VOID CDXAudioOutputStream::ImplProcess() {
 	FLOAT* OutputBuffer = (FLOAT*)(_alloca(sizeof(FLOAT) * 2 * SamplesGen)); //Create the buffer on the stack (_alloca is safe here)
 
 	//Get the application to generate new output data
-	m_WriteCallback->Process (
+	m_WriteCallback->OnProcess (
 		m_SampleRate,
 		OutputBuffer,
 		SamplesGen
