@@ -1,16 +1,2 @@
-﻿  DXAudioResampler.cpp
-  CDXAudioStream.cpp
-  DXAudio.cpp
-  CMMNotificationClient.cpp
-  ClientWriter.cpp
-  ClientReader.cpp
-  CDXAudioResampler.cpp
-  CDXAudioOutputStream.cpp
-  CDXAudioLoopbackStream.cpp
-  CDXAudioInputStream.cpp
-  CDXAudioEchoStream.cpp
-  CDXAudioDuplexStream.cpp
-  Generating Code...
-     Creating library C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.lib and object C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.exp
-libsamplerate.lib(src_linear.obj) : error LNK2019: unresolved external symbol __imp__printf referenced in function _linear_vari_process
-C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.dll : fatal error LNK1120: 1 unresolved externals
+﻿     Creating library C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.lib and object C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.exp
+  DXAudio.vcxproj -> C:\Users\Austin\Documents\COM Objects\DXAudio\Debug\DXAudio.dll
