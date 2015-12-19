@@ -26,7 +26,7 @@
 #define FILENAME L"CDXAudioStream.cpp"
 #define EVENT_INIT(x, Line) x = CreateEventW(NULL, FALSE, FALSE, NULL); if (x == NULL) { m_Callback->OnObjectFailure(FILENAME, Line, HRESULT_FROM_WIN32(GetLastError())); return E_FAIL; }
 #define EVENT_CLEANUP(x) if (x != NULL) { CloseHandle(x); x = NULL; }
-#define CHECK_HR(Line) if (FAILED(hr)) { m_Callback->OnObjectFailure(L"CDXAudioStream.cpp", Line, hr); return hr; }
+#define CHECK_HR(Line) if (FAILED(hr)) { m_Callback->OnObjectFailure(FILENAME, Line, hr); return hr; }
 
 CDXAudioStream::CDXAudioStream() :
 m_RefCount(1),
